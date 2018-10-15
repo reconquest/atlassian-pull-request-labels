@@ -1,0 +1,38 @@
+<atlassian-plugin key="${atlassian.plugin.key}" name="${project.name}" plugins-version="2">
+    <plugin-info>
+        <description>${project.description}</description>
+        <version>${project.version}</version>
+        <vendor name="${project.organization.name}" url="${project.organization.url}" />
+        <param name="plugin-icon">images/pluginIcon.png</param>
+        <param name="plugin-logo">images/pluginLogo.png</param>
+    </plugin-info>
+
+    <!-- add our i18n resource -->
+    <resource type="i18n" name="i18n" location="labels"/>
+
+    <!--[> add our web resources <]-->
+    <!--<web-resource key="labels-resources" name="labels Web Resources">-->
+    <!--    <dependency>com.atlassian.auiplugin:ajs</dependency>-->
+
+    <!--    <resource type="download" name="labels.css" location="/css/labels.css"/>-->
+    <!--    <resource type="download" name="labels.js" location="/js/labels.js"/>-->
+    <!--    <resource type="download" name="images/" location="/images"/>-->
+
+    <!--    <context>labels</context>-->
+    <!--</web-resource>-->
+
+    <client-resource key="resources" name="Pull Request Overview Resources">
+        <directory location="/css/" />
+        <directory location="/js/" />
+        <directory location="/soy/" />
+
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.bitbucket.server.bitbucket-web-api:pull-request-web-panels</dependency>
+    </client-resource>
+
+    <client-web-panel name="Pull Requests Labels" key="pr-labels" location="bitbucket.pull-request.table-column.after/build-status-pr-list-col" weight="2000">
+        <client-context-provider>Reconquest.Labels.GetLabelsForPR</client-context-provider>
+        <resource name="view" type="soy" location="io.reconquest.bitbucket.labels:resources/io.reconquest.bitbucket.labels.pr" />
+        <dependency>io.reconquest.bitbucket.labels:resources</dependency>
+    </client-web-panel>
+</atlassian-plugin>
