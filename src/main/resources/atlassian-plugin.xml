@@ -16,7 +16,9 @@
     <!--</resource>-->
 
     <web-resource name="Resources" key="resources">
-        <resource name="pull-requests-labels.js" type="download" location="resources/js/pull-requests-labels.js"/>
+        <!--<resource name="pull-requests-labels.js" type="download" location="js/labels.js"/>-->
+        <resource name="labels.js" type="download" location="js/labels-loader.js"/>
+        <resource name="labels.css" type="download" location="css/labels.css"/>
         <context>atl.general</context>
     </web-resource>
 
