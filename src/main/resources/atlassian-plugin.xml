@@ -10,29 +10,34 @@
     <!-- add our i18n resource -->
     <resource type="i18n" name="i18n" location="labels"/>
 
-    <!--[> add our web resources <]-->
-    <!--<web-resource key="labels-resources" name="labels Web Resources">-->
+    <!--[> Resources may contain arbitrary key/value pairs <]-->
+    <!--<resource type="download" name="pull-requests-labels" location="resources/js/pull-requests-labels.js">-->
+    <!--    <property key="content-type" value="application/javascript"/>-->
+    <!--</resource>-->
+
+    <web-resource name="Resources" key="resources">
+        <resource name="pull-requests-labels.js" type="download" location="resources/js/pull-requests-labels.js"/>
+        <context>atl.general</context>
+    </web-resource>
+
+    <!--<client-resource key="resources" name="Pull Request Overview Resources">-->
+    <!--    <directory location="/css/" />-->
+    <!--    <directory location="/js/" />-->
+    <!--    <directory location="/soy/" />-->
+
     <!--    <dependency>com.atlassian.auiplugin:ajs</dependency>-->
+    <!--</client-resource>-->
 
-    <!--    <resource type="download" name="labels.css" location="/css/labels.css"/>-->
-    <!--    <resource type="download" name="labels.js" location="/js/labels.js"/>-->
-    <!--    <resource type="download" name="images/" location="/images"/>-->
+    <!--<client-web-panel name="Pull Requests Labels" key="pr-labels" location="bitbucket.web.repository.banner" weight="2000">-->
+    <!--    <client-context-provider>Reconquest.Labels.Init</client-context-provider>-->
+    <!--    <resource name="view" type="soy" location="io.reconquest.bitbucket.labels:resources/io.reconquest.bitbucket.labels.pr" />-->
+    <!--    <dependency>io.reconquest.bitbucket.labels:resources</dependency>-->
+    <!--</client-web-panel>-->
 
-    <!--    <context>labels</context>-->
-    <!--</web-resource>-->
-
-    <client-resource key="resources" name="Pull Request Overview Resources">
-        <directory location="/css/" />
-        <directory location="/js/" />
-        <directory location="/soy/" />
-
-        <dependency>com.atlassian.auiplugin:ajs</dependency>
-        <dependency>com.atlassian.bitbucket.server.bitbucket-web-api:pull-request-web-panels</dependency>
-    </client-resource>
-
-    <client-web-panel name="Pull Requests Labels" key="pr-labels" location="bitbucket.pull-request.table-column.after/build-status-pr-list-col" weight="2000">
-        <client-context-provider>Reconquest.Labels.GetLabelsForPR</client-context-provider>
-        <resource name="view" type="soy" location="io.reconquest.bitbucket.labels:resources/io.reconquest.bitbucket.labels.pr" />
-        <dependency>io.reconquest.bitbucket.labels:resources</dependency>
-    </client-web-panel>
+    <!--<web-panel name="Pull Requests Labels" key="pr-labels" location="bitbucket.web.repository.banner" weight="2000">-->
+    <!--    [><client-context-provider>Reconquest.Labels.Init</client-context-provider><]-->
+    <!--    <resource name="view" type="soy" location="io.reconquest.bitbucket.labels:resources/io.reconquest.bitbucket.labels.pr" />-->
+    <!--    [><resource name="view" type="download" location="resources/js/pull-requests-labels.js" /><]-->
+    <!--    [><dependency>io.reconquest.bitbucket.labels:resources</dependency><]-->
+    <!--</web-panel>-->
 </atlassian-plugin>
