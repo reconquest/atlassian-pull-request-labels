@@ -40,4 +40,9 @@
     <!--    [><resource name="view" type="download" location="resources/js/pull-requests-labels.js" /><]-->
     <!--    [><dependency>io.reconquest.bitbucket.labels:resources</dependency><]-->
     <!--</web-panel>-->
+
+  <rest name="Pull Request Labels" i18n-name-key="pull-request-labels.name" key="pull-request-labels" path="io.reconquest.labels" version="1.0">
+    <description key="pull-request-labels.description">The Pull Request Labels Plugin</description>
+  </rest>
+
 </atlassian-plugin>
