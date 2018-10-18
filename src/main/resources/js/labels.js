@@ -10,6 +10,45 @@
 
         var pullRequestID = $content.data('pullrequestid');
 
+        var baseURL = AJS.contextPath();
+
+        if (baseURL == "/") {
+            baseURL = ""
+        }
+
+        var apiBaseURL = baseURL + '/rest/io.reconquest.bitbucket.labels/1.0/';
+
+        var loadPullRequestLabels = function (pullRequestID) {
+            var url = apiBaseURL +
+                projectKey + '/' +
+                repoSlug + '/pull-requests/' +
+                pullRequestID;
+
+            return $.get(url);
+        }
+
+        var loadPullRequestsLabels = function () {
+            var url = apiBaseURL +
+                projectKey + '/' +
+                repoSlug + '/pull-requests';
+
+            return $.get(url);
+        }
+
+        var loadRepoLabels = function () {
+            // TODO: add API call to retrieve unique set of labels
+            return loadPullRequestsLabels().then(function (response) {
+                var result = {};
+                $.each(response.labels, function (pullRequestID, labels) {
+                    $.each(labels, function (index, label) {
+                        result[label] = true;
+                    });
+                });
+
+                return Object.keys(result);
+            })
+        }
+
         var addPullRequestsTableHeader = function () {
             var $header = $('<th/>', {
                 // TODO: localization?
@@ -19,42 +58,40 @@
             $pullRequestsTable.find('thead th.summary').after($header);
         }
 
-        var loadPullRequestsLabels = function (pullRequestsIDs) {
-            console.log(projectKey, repoSlug, pullRequestsIDs);
+        var addPullRequestLabel = function (text) {
+            var url = apiBaseURL +
+                projectKey + '/' +
+                repoSlug + '/pull-requests/' +
+                pullRequestID;
 
-            return {
-                1: [
-                    { name: "feature" }
-                ],
-
-                2: [
-                    { name: "bugfix" },
-                    { name: "approved" }
-                ],
-            };
+            return $.ajax(
+                url,
+                {
+                    data: {name: text},
+                    method: "POST",
+                    headers: {
+                        "X-Atlassian-Token": "no-check"
+                    }
+                }
+            );
         }
 
-        var loadRepoLabels = function () {
-            console.log(projectKey, repoSlug);
+        var removePullRequestLabel = function (text) {
+            var url = apiBaseURL +
+                projectKey + '/' +
+                repoSlug + '/pull-requests/' +
+                pullRequestID;
 
-            return [
-                { name: "feature" },
-                { name: "bugfix" },
-                { name: "approved" }
-            ];
-        }
-
-        var addPullRequestLabel = function (text, onSuccess) {
-            // TODO: send
-            var label = {
-                name: text,
-            };
-
-            onSuccess(label)
-        }
-
-        var removePullRequestLabel = function (text, onSuccess) {
-            onSuccess()
+            return $.ajax(
+                url,
+                {
+                    data: {name: text},
+                    method: "DELETE",
+                    headers: {
+                        "X-Atlassian-Token": "no-check"
+                    }
+                }
+            )
         }
 
         var getPullRequestsIDs = function () {
@@ -78,7 +115,7 @@
                     $.each(labels, function (index, label) {
                         var $label = io.reconquest.bitbucket.labels.Label(
                             {
-                                text: label.name,
+                                text: label,
                             }
                         );
 
@@ -96,7 +133,7 @@
         var addLabelToPanel = function ($panel, label, closeable) {
             var $label = $(io.reconquest.bitbucket.labels.Label(
                 {
-                    text: label.name,
+                    text: label,
                     closeable: closeable
                 }
             ));
@@ -104,7 +141,9 @@
             if (closeable) {
                 $label.find('.aui-icon-close').click(function () {
                     $panel.find('.spinner').spin();
-                    removePullRequestLabel(label.name, function () {
+                    $.when(
+                        removePullRequestLabel(label)
+                    ).done(function () {
                         $panel.find('.spinner').spinStop();
                         $label.remove();
                     });
@@ -145,8 +184,10 @@
             $input.attr('disabled', true);
             $panel.find('.spinner').spin();
 
-            addPullRequestLabel(newLabel, function (label) {
-                addLabelToPanel($panel, label, true);
+            $.when(
+                addPullRequestLabel(newLabel)
+            ).done(function () {
+                addLabelToPanel($panel, newLabel, true);
 
                 $input.val('');
                 $input.removeAttr('disabled');
@@ -164,7 +205,6 @@
                 event.preventDefault();
             })
 
-
             $select.change(function () {
                 addLabel($panel, $select);
             });
@@ -174,23 +214,19 @@
                 function (index, label) {
                     $select.append(
                         io.reconquest.bitbucket.labels.ViewLabelsSelectOption({
-                            text: label.name
+                            text: label
                         })
                     )
                 }
             );
         }
 
-        var addPullRequestLabelsSidePanel = function (repoLabels) {
+        var addPullRequestLabelsSidePanel = function (
+            pullRequestLabels,
+            repoLabels
+        ) {
             var $panel = $(io.reconquest.bitbucket.labels.View());
 
-            var labels = loadPullRequestsLabels([pullRequestID]);
-
-            if (!(pullRequestID in labels)) {
-                return
-            }
-
-            var pullRequestLabels = labels[pullRequestID];
             $.each(pullRequestLabels, function (index, label) {
                 addLabelToPanel($panel, label, false);
             });
@@ -199,7 +235,7 @@
                 editPullRequestLabelsSidePanel($panel, pullRequestLabels);
             });
 
-            initLabelSelect($panel, pullRequestLabels, repoLabels);
+            initLabelSelect($panel, repoLabels);
 
             $sideSection.append($panel);
         }
@@ -217,21 +253,30 @@
             });
 
             $select.show();
+            $select.find('input').focus();
         }
 
         if ($pullRequestsTable.length > 0) {
             addPullRequestsTableHeader();
 
             var pullRequestsIDs = getPullRequestsIDs();
-            var pullRequestsLabels = loadPullRequestsLabels(pullRequestsIDs);
-
-            addPullRequestsLabels(pullRequestsLabels);
+            $.when(
+                loadPullRequestsLabels()
+            ).done(function (pullRequestsResponse) {
+                addPullRequestsLabels(pullRequestsResponse.labels);
+            });
         }
 
         if (pullRequestID > 0) {
-            var repoLabels = loadRepoLabels(projectKey, repoSlug);
-
-            addPullRequestLabelsSidePanel(repoLabels);
+            $.when(
+                loadPullRequestLabels(pullRequestID),
+                loadRepoLabels(projectKey, repoSlug)
+            ).done(function (pullRequestLabelsResponse, repoLabels) {
+                addPullRequestLabelsSidePanel(
+                    pullRequestLabelsResponse[0].labels,
+                    repoLabels
+                );
+            });
         }
     });
 }(AJS.$));
