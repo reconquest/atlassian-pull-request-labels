@@ -1,0 +1,53 @@
+{namespace io.reconquest.bitbucket.labels}
+
+/**
+ * @param text Text that will be displayed in label.
+ * @param closeable Is Closeable?
+ */
+{template .Label}
+{call aui.labels.label}
+    {param text: $text /}
+    {param extraAttributes: ['data-label-text': $text] /}
+    {param isCloseable: $closeable /}
+{/call}
+{/template}
+
+/**
+ */
+{template .View}
+<div class="labels-side-panel">
+    <h3>
+    {getText('io.reconquest.bitbucket.labels.view.header')}
+    {call aui.buttons.button}
+        {param id: 'labels-edit-button' /}
+        {param text: '' /}
+        {param type: 'subtle' /}
+        {param iconType: 'aui' /}
+        {param iconClass: 'aui-icon-small aui-iconfont-edit' /}
+        {param iconText: 'Edit' /}
+    {/call}
+    <span class="spinner"></span>
+    </h3>
+    <div class="labels-list"></div>
+    <div class="labels-new">
+    <form class="aui">
+        <p>
+            <aui-select
+                id="labels-new-select"
+                name="label"
+                placeholder="{getText('io.reconquest.bitbucket.labels.view.new')}"
+                can-create-values
+            >
+            </aui-select>
+        </p>
+    </form>
+    </div>
+</div>
+{/template}
+
+/**
+ * @param text Label text.
+ */
+{template .ViewLabelsSelectOption}
+<aui-option>{$text}</aui-option>
+{/template}

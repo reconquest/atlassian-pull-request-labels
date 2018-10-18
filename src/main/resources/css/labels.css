@@ -1,7 +1,16 @@
-.pull-request-label {
-    background: lightgray;
-    float: left;
-    padding: 2px 8px 4px 8px;
-    margin: 2px;
-    border-radius: 8px;
+.labels-side-panel {
+    margin-bottom: 30px;
+}
+
+.labels-side-panel .labels-list {
+    margin-top: 1em;
+}
+
+.labels-side-panel .labels-new {
+    margin-top: 1em;
+    display: none;
+}
+
+.labels-side-panel div.spinner {
+    padding-left: 15px;
 }
