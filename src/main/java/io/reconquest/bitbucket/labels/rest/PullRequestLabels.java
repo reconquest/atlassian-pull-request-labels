@@ -214,4 +214,48 @@ public class PullRequestLabels {
 
         return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
     }
+
+
+    @DELETE
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes("application/x-www-form-urlencoded")
+    @AnonymousAllowed
+    @Path("{pull_request_id}")
+    public Response delete(
+        @PathParam("project_slug") String projectSlug,
+        @PathParam("repository_slug") String repositorySlug,
+        @PathParam("pull_request_id") Long pullRequestId,
+        @FormParam("name") String name
+    )
+    {
+        Project project = this.projectService.getByKey(projectSlug);
+
+        Repository repository = this.repositoryService.getBySlug(
+            projectSlug,
+            repositorySlug
+        );
+
+        PullRequest pullRequest = this.pullRequestService.getById(
+            repository.getId(),
+            pullRequestId
+        );
+
+        final Label[] labels = this.ao.find(
+            Label.class,
+            Query.select().where(
+                "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ? AND NAME = ?",
+                project.getId(),
+                repository.getId(),
+                pullRequest.getId(),
+                name
+            )
+        );
+
+        if (labels.length > 0) {
+            this.ao.delete(labels);
+            this.ao.flush();
+        }
+
+        return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+    }
 }
