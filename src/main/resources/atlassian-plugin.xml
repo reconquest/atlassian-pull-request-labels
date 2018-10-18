@@ -43,8 +43,13 @@
     <!--    [><dependency>io.reconquest.bitbucket.labels:resources</dependency><]-->
     <!--</web-panel>-->
 
-  <rest name="Pull Request Labels" i18n-name-key="pull-request-labels.name" key="pull-request-labels" path="io.reconquest.labels" version="1.0">
+  <rest name="Pull Request Labels" i18n-name-key="pull-request-labels.name" key="pull-request-labels" path="io.reconquest.bitbucket.labels" version="1.0">
     <description key="pull-request-labels.description">The Pull Request Labels Plugin</description>
   </rest>
+
+  <ao key="ao-module">
+      <description>The module configuring the Active Objects service used by this plugin</description>
+      <entity>io.reconquest.bitbucket.labels.ao.Label</entity>
+  </ao>
 
 </atlassian-plugin>
