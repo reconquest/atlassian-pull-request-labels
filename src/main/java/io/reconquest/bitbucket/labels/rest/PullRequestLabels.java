@@ -83,16 +83,25 @@ public class PullRequestLabels {
     )
     {
         Project project = this.projectService.getByKey(projectSlug);
+        if (project == null) {
+            return Response.status(404).build();
+        }
 
         Repository repository = this.repositoryService.getBySlug(
             projectSlug,
             repositorySlug
         );
+        if (repository == null) {
+            return Response.status(404).build();
+        }
 
         PullRequest pullRequest = this.pullRequestService.getById(
             repository.getId(),
             pullRequestId
         );
+        if (pullRequest == null) {
+            return Response.status(404).build();
+        }
 
         final Label[] labels = this.ao.find(
             Label.class,
@@ -130,11 +139,17 @@ public class PullRequestLabels {
     )
     {
         Project project = this.projectService.getByKey(projectSlug);
+        if (project == null) {
+            return Response.status(404).build();
+        }
 
         Repository repository = this.repositoryService.getBySlug(
             projectSlug,
             repositorySlug
         );
+        if (repository == null) {
+            return Response.status(404).build();
+        }
 
         final Label[] labels = this.ao.find(
             Label.class,
@@ -176,16 +191,25 @@ public class PullRequestLabels {
     )
     {
         Project project = this.projectService.getByKey(projectSlug);
+        if (project == null) {
+            return Response.status(404).build();
+        }
 
         Repository repository = this.repositoryService.getBySlug(
             projectSlug,
             repositorySlug
         );
+        if (repository == null) {
+            return Response.status(404).build();
+        }
 
         PullRequest pullRequest = this.pullRequestService.getById(
             repository.getId(),
             pullRequestId
         );
+        if (pullRequest == null) {
+            return Response.status(404).build();
+        }
 
         final int found = this.ao.count(
             Label.class,
