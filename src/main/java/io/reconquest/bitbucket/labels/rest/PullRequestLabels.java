@@ -15,6 +15,8 @@ import javax.inject.Named;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.INFO;
@@ -143,9 +145,21 @@ public class PullRequestLabels {
             )
         );
 
+        HashMap<Long,ArrayList<String>> map = new HashMap<Long, ArrayList<String>>();
+        for (Label label: labels) {
+            ArrayList<String> names = map.get(label.getPullRequestId());
+            if (names == null) {
+                names = new ArrayList<String>();
+                map.put(label.getPullRequestId(), names);
+            }
+
+            names.add(label.getName());
+
+            //log.log(SEVERE, new Object(names));
+        }
 
         return Response.ok(
-            new PullRequestLabelsListResponse(this.getNames(labels))
+            new PullRequestLabelsMapResponse(map)
         ).build();
     }
 
