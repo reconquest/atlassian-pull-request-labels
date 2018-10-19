@@ -6,11 +6,10 @@
     <artifactId>labels</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <organization>
-        <name>Example Company</name>
-        <url>http://www.example.com/</url>
+        <name>reconquest</name>
     </organization>
-    <name>labels</name>
-    <description>This is the io.reconquest.bitbucket:labels plugin for Atlassian Bitbucket Server.</description>
+    <name>Pull Request Labels</name>
+    <description>Plugin adds ability to put labels on Pull Requests.</description>
     <packaging>atlassian-plugin</packaging>
     <dependencyManagement>
         <dependencies>

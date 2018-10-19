@@ -16,13 +16,15 @@
             </transformer>
         </transformation> 
 
-        <!-- transform calls to AJS.getText() inside JS files -->
         <transformation extension="js">
             <transformer key="jsI18n"/>
         </transformation>
 
-        <!--<resource name="pull-requests-labels.js" type="download" location="js/labels.js"/>-->
-        <resource name="labels.js" type="download" location="js/labels-loader.js"/>
+        <resource name="labels.js" type="download" location="js/labels.js"/>
+
+        <!-- UNCOMMENT TO USE JS LOADER FOR SCRIPT TO QUICKEN DEVELOPMENT -->
+        <!--<resource name="labels-loader.js" type="download" location="js/labels-loader.js"/>-->
+
         <resource name="labels.css" type="download" location="css/labels.css"/>
         <resource name="labels.soy.js" type="download" location="/soy/labels.soy"/>
         <context>atl.general</context>
@@ -32,8 +34,8 @@
     </web-resource>
 
 
-  <rest name="Pull Request Labels" i18n-name-key="pull-request-labels.name" key="pull-request-labels" path="io.reconquest.bitbucket.labels" version="1.0">
-    <description key="pull-request-labels.description">The Pull Request Labels Plugin</description>
+  <rest name="Pull Request Labels" key="pull-request-labels" path="io.reconquest.bitbucket.labels" version="1.0">
+    <description>The Pull Request Labels Plugin</description>
   </rest>
 
   <ao key="ao-module">
