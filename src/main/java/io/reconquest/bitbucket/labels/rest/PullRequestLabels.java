@@ -1,6 +1,5 @@
 package io.reconquest.bitbucket.labels.rest;
 
-import com.atlassian.plugins.rest.common.security.AnonymousAllowed;
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.plugin.spring.scanner.annotation.component.Scanned;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
@@ -38,7 +37,7 @@ import net.java.ao.Query;
 
 import static com.google.common.base.Preconditions.*;
 
-@Path("/{project_slug}/{repository_slug}/pull-requests/")
+@Path("/{project_slug}/{repository_slug}/")
 @Scanned
 public class PullRequestLabels {
     @ComponentImport
@@ -74,8 +73,7 @@ public class PullRequestLabels {
 
     @GET
     @Produces({MediaType.APPLICATION_JSON})
-    @AnonymousAllowed
-    @Path("{pull_request_id}")
+    @Path("/pull-requests/{pull_request_id}")
     public Response listByPullRequest(
         @PathParam("project_slug") String projectSlug,
         @PathParam("repository_slug") String repositorySlug,
@@ -119,21 +117,10 @@ public class PullRequestLabels {
         ).build();
     }
 
-    private String[] getNames(Label[] labels) {
-        Set<String> set = new HashSet<String>();
-        for (int i = 0; i < labels.length; i++) {
-            set.add(labels[i].getName());
-        }
-
-        String[] names = set.toArray(new String[set.size()]);
-
-        return names;
-    }
-
     @GET
     @Produces({MediaType.APPLICATION_JSON})
-    @AnonymousAllowed
-    public Response listByRepository(
+    @Path("/pull-requests/")
+    public Response listByRepositoryHash(
         @PathParam("project_slug") String projectSlug,
         @PathParam("repository_slug") String repositorySlug
     )
@@ -178,11 +165,45 @@ public class PullRequestLabels {
         ).build();
     }
 
+    @GET
+    @Produces({MediaType.APPLICATION_JSON})
+    @Path("/")
+    public Response listByRepository(
+        @PathParam("project_slug") String projectSlug,
+        @PathParam("repository_slug") String repositorySlug
+    )
+    {
+        Project project = this.projectService.getByKey(projectSlug);
+        if (project == null) {
+            return Response.status(404).build();
+        }
+
+        Repository repository = this.repositoryService.getBySlug(
+            projectSlug,
+            repositorySlug
+        );
+        if (repository == null) {
+            return Response.status(404).build();
+        }
+
+        final Label[] labels = this.ao.find(
+            Label.class,
+            Query.select().where(
+                "PROJECT_ID = ? AND REPOSITORY_ID = ?",
+                project.getId(),
+                repository.getId()
+            )
+        );
+
+        return Response.ok(
+            new PullRequestLabelsListResponse(this.getNames(labels))
+        ).build();
+    }
+
     @POST
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes("application/x-www-form-urlencoded")
-    @AnonymousAllowed
-    @Path("{pull_request_id}")
+    @Path("/pull-requests/{pull_request_id}")
     public Response add(
         @PathParam("project_slug") String projectSlug,
         @PathParam("repository_slug") String repositorySlug,
@@ -243,8 +264,7 @@ public class PullRequestLabels {
     @DELETE
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes("application/x-www-form-urlencoded")
-    @AnonymousAllowed
-    @Path("{pull_request_id}")
+    @Path("/pull-requests/{pull_request_id}")
     public Response delete(
         @PathParam("project_slug") String projectSlug,
         @PathParam("repository_slug") String repositorySlug,
@@ -281,5 +301,16 @@ public class PullRequestLabels {
         }
 
         return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+    }
+
+    private String[] getNames(Label[] labels) {
+        Set<String> set = new HashSet<String>();
+        for (int i = 0; i < labels.length; i++) {
+            set.add(labels[i].getName());
+        }
+
+        String[] names = set.toArray(new String[set.size()]);
+
+        return names;
     }
 }
