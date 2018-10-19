@@ -3,8 +3,7 @@
     // @requires _
     $(document).ready(function () {
         var $content = $('#content');
-        var $pullRequestsTable = $('.pull-requests-table');
-        var $pullRequestsSummaries = $pullRequestsTable.find('tbody td.summary');
+        var $pullRequestsContent = $('#pull-requests-content');
         var $sideSection = $('.plugin-section-primary');
 
         var projectKey = $content.data('projectkey');
@@ -51,7 +50,7 @@
                 text: "Labels"
             });
 
-            $pullRequestsTable.find('thead th.summary').after($header);
+            $pullRequestsContent.find('thead th.summary').after($header);
         }
 
         var addPullRequestLabel = function (text) {
@@ -90,18 +89,6 @@
             )
         }
 
-        var getPullRequestsIDs = function () {
-            var pullRequestsIDs = $pullRequestsSummaries.
-                map(
-                    function(index, element) {
-                        return $(element).data('pull-request-id');
-                    }
-                ).
-                get();
-
-            return pullRequestsIDs;
-        }
-
         var addPullRequestsLabels = function (pullRequestsLabels) {
             $.each(
                 pullRequestsLabels,
@@ -119,7 +106,8 @@
                         $cell.append(" ");
                     })
 
-                    $pullRequestsSummaries.
+                    $pullRequestsContent.
+                        find('tbody td.summary').
                         filter('tbody td[data-pull-request-id="' + id + '"]').
                         after($cell);
                 }
@@ -252,7 +240,19 @@
             $select.find('input').focus();
         }
 
-        if ($pullRequestsTable.length > 0) {
+        var addTooltipForLabels = function() {
+            $('.io_reconquest_bitbucket_labels_label').tooltip({
+                title: function() {
+                    return 'Searching by labels is not yet available. '+
+                        'The feature is coming soon.';
+                },
+            });
+        }
+
+        var populatePullRequestsTable = function () {
+            // refresh object because it can be modified by atlassian ui
+            $pullRequestsContent = $($pullRequestsContent);
+
             addPullRequestsTableHeader();
 
             $.when(
@@ -261,6 +261,27 @@
                 addPullRequestsLabels(pullRequestsResponse.labels);
                 addTooltipForLabels();
             });
+        }
+
+        if ($pullRequestsContent.length > 0) {
+            var MutationObserver =
+                window.MutationObserver ||
+                window.WebKitMutationObserver;
+
+            var observer = new MutationObserver(function(mutations, observer) {
+                $.each(mutations, function (index, mutation) {
+                    if (mutation.target.tagName == "TBODY") {
+                        populatePullRequestsTable();
+                    }
+                })
+            });
+
+            observer.observe($pullRequestsContent[0], {
+                subtree: true,
+                childList: true
+            });
+
+            populatePullRequestsTable();
         }
 
         if (pullRequestID > 0) {
@@ -273,16 +294,6 @@
                     repoLabels[0].labels
                 );
                 addTooltipForLabels();
-            });
-        }
-
-
-        var addTooltipForLabels = function() {
-            $('.io_reconquest_bitbucket_labels_label').tooltip({
-                title: function() {
-                    return 'Searching by labels is not yet available. '+
-                        'The feature is coming soon.';
-                },
             });
         }
     });
