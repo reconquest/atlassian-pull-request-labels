@@ -30,22 +30,14 @@
         var loadPullRequestsLabels = function () {
             var url = apiBaseURL +
                 projectKey + '/' +
-                repoSlug + '/pull-requests';
+                repoSlug + '/';
 
             return $.get(url);
         }
 
         var loadRepoLabels = function () {
-            // TODO: add API call to retrieve unique set of labels
             return loadPullRequestsLabels().then(function (response) {
-                var result = {};
-                $.each(response.labels, function (pullRequestID, labels) {
-                    $.each(labels, function (index, label) {
-                        result[label] = true;
-                    });
-                });
-
-                return Object.keys(result);
+                return response.labels;
             })
         }
 
