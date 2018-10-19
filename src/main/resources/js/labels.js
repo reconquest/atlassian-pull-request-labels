@@ -1,4 +1,6 @@
 (function($) {
+    // @requires $
+    // @requires _
     $(document).ready(function () {
         var $content = $('#content');
         var $pullRequestsTable = $('.pull-requests-table');
@@ -148,7 +150,7 @@
         var addLabel = function ($panel, $select) {
             var $input = $select.find('input');
 
-            var newLabel = $select.val();
+            var newLabel = _.unescape($select.val());
             var found = false;
 
             if (newLabel == "") {
@@ -256,6 +258,7 @@
                 loadPullRequestsLabels()
             ).done(function (pullRequestsResponse) {
                 addPullRequestsLabels(pullRequestsResponse.labels);
+                addTooltipForLabels();
             });
         }
 
@@ -268,7 +271,19 @@
                     pullRequestLabelsResponse[0].labels,
                     repoLabels
                 );
+                addTooltipForLabels();
+            });
+        }
+
+
+        var addTooltipForLabels = function() {
+            $('.io_reconquest_bitbucket_labels_label').tooltip({
+                title: function() {
+                    return 'Searching by labels is not yet available. '+
+                        'The feature is coming soon.';
+                },
             });
         }
     });
 }(AJS.$));
+// vim: et
