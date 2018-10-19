@@ -32,15 +32,17 @@
         var loadPullRequestsLabels = function () {
             var url = apiBaseURL +
                 projectKey + '/' +
-                repoSlug + '/';
+                repoSlug + '/pull-requests/';
 
             return $.get(url);
         }
 
         var loadRepoLabels = function () {
-            return loadPullRequestsLabels().then(function (response) {
-                return response.labels;
-            })
+            var url = apiBaseURL +
+                projectKey + '/' +
+                repoSlug + '/';
+
+            return $.get(url);
         }
 
         var addPullRequestsTableHeader = function () {
@@ -253,7 +255,6 @@
         if ($pullRequestsTable.length > 0) {
             addPullRequestsTableHeader();
 
-            var pullRequestsIDs = getPullRequestsIDs();
             $.when(
                 loadPullRequestsLabels()
             ).done(function (pullRequestsResponse) {
@@ -269,7 +270,7 @@
             ).done(function (pullRequestLabelsResponse, repoLabels) {
                 addPullRequestLabelsSidePanel(
                     pullRequestLabelsResponse[0].labels,
-                    repoLabels
+                    repoLabels[0].labels
                 );
                 addTooltipForLabels();
             });
