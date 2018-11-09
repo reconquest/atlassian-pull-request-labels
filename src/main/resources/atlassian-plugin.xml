@@ -5,6 +5,7 @@
         <vendor name="${project.organization.name}" url="${project.organization.url}" />
         <param name="plugin-icon">images/plugin-icon.png</param>
         <param name="plugin-logo">images/plugin-logo.png</param>
+        <param name="atlassian-data-center-compatible">true</param>
     </plugin-info>
 
     <resource type="i18n" name="i18n" location="${project.groupId}.${project.artifactId}"/>
@@ -14,7 +15,7 @@
             <transformer key="soyTransformer">
                 <functions>com.atlassian.confluence.plugins.soy:soy-core-functions</functions>
             </transformer>
-        </transformation> 
+        </transformation>
 
         <transformation extension="js">
             <transformer key="jsI18n"/>
