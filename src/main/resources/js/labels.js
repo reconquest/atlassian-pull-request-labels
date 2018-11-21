@@ -47,10 +47,13 @@
         var addPullRequestsTableHeader = function () {
             var $header = $('<th/>', {
                 // TODO: localization?
-                text: "Labels"
+                "text": "Labels",
+                "class": "labels"
             });
 
-            $pullRequestsContent.find('thead th.summary').after($header);
+            if ($pullRequestsContent.find('th.labels').length == 0) {
+                $pullRequestsContent.find('thead th.summary').after($header);
+            }
         }
 
         var addPullRequestLabel = function (text) {
@@ -90,9 +93,18 @@
         }
 
         var addPullRequestsLabels = function (pullRequestsLabels) {
-            $.each(
-                pullRequestsLabels,
-                function (id, labels) {
+            $pullRequestsContent.
+                find('tbody td.summary').
+                filter('tbody td[data-pull-request-id!=""]').
+                each(function(i, td) {
+                    var labels = [];
+
+                    var id = $(td).data('pull-request-id');
+
+                    if (id in pullRequestsLabels) {
+                        labels = pullRequestsLabels[id];
+                    }
+
                     var $cell = $('<td/>');
 
                     $.each(labels, function (index, label) {
@@ -104,14 +116,10 @@
 
                         $cell.append($label);
                         $cell.append(" ");
-                    })
+                    });
 
-                    $pullRequestsContent.
-                        find('tbody td.summary').
-                        filter('tbody td[data-pull-request-id="' + id + '"]').
-                        after($cell);
-                }
-            )
+                    $(td).after($cell);
+                });
         }
 
         var addLabelToPanel = function ($panel, label, closeable) {
@@ -253,11 +261,10 @@
             // refresh object because it can be modified by atlassian ui
             $pullRequestsContent = $($pullRequestsContent);
 
-            addPullRequestsTableHeader();
-
             $.when(
                 loadPullRequestsLabels()
             ).done(function (pullRequestsResponse) {
+                addPullRequestsTableHeader();
                 addPullRequestsLabels(pullRequestsResponse.labels);
                 addTooltipForLabels();
             });
@@ -269,9 +276,17 @@
                 window.WebKitMutationObserver;
 
             var observer = new MutationObserver(function(mutations, observer) {
+                var timeout = null;
+
                 $.each(mutations, function (index, mutation) {
                     if (mutation.target.tagName == "TBODY") {
-                        populatePullRequestsTable();
+                        if (timeout != null) {
+                            clearTimeout(timeout);
+                        }
+
+                        timeout = setTimeout(function () {
+                            populatePullRequestsTable();
+                        }, 100)
                     }
                 })
             });
