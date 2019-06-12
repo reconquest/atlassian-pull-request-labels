@@ -191,20 +191,34 @@
             $panel,
             repoLabels
         ) {
+            console.log('init')
             var $select = $panel.find('#labels-new-select');
 
-            $select.parents('form').submit(function (event) {
-                event.preventDefault();
+            $select.parents('form').submit(function (e) {
+                e.preventDefault();
             })
 
-            $select.change(function () {
-                addLabel($panel, $select);
+            changing = false;
+            // aui/select has duplicated event triggering
+            $select.change(function (e) {
+                if (changing) {
+                    return;
+                }
+
+                changing = true;
+                $.when(
+                    addLabel($panel, $select)
+                ).done(function() {
+                    changing = false;
+                })
+
+                return false;
             });
 
             $.each(
                 repoLabels,
                 function (index, label) {
-                    $select.append(
+                    $select.find('datalist').append(
                         io.reconquest.bitbucket.labels.ViewLabelsSelectOption({
                             text: label
                         })
@@ -304,6 +318,7 @@
                 loadPullRequestLabels(pullRequestID),
                 loadRepoLabels(projectKey, repoSlug)
             ).done(function (pullRequestLabelsResponse, repoLabels) {
+                console.log('done')
                 addPullRequestLabelsSidePanel(
                     pullRequestLabelsResponse[0].labels,
                     repoLabels[0].labels
