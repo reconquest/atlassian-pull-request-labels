@@ -40,277 +40,230 @@ import static com.google.common.base.Preconditions.*;
 @Path("/{project_slug}/{repository_slug}/")
 @Scanned
 public class PullRequestLabels {
-    @ComponentImport
-    private final ActiveObjects ao;
+  @ComponentImport private final ActiveObjects ao;
 
-    private static Logger log = Logger.getLogger(
-        PullRequestLabels.class.getSimpleName()
-    );
+  private static Logger log = Logger.getLogger(PullRequestLabels.class.getSimpleName());
 
-    @ComponentImport
-    private final RepositoryService repositoryService;
+  @ComponentImport private final RepositoryService repositoryService;
 
-    @ComponentImport
-    private final PullRequestService pullRequestService;
+  @ComponentImport private final PullRequestService pullRequestService;
 
-    @ComponentImport
-    private final ProjectService projectService;
+  @ComponentImport private final ProjectService projectService;
 
-    @Inject
-    public PullRequestLabels(
-        ActiveObjects ao,
-        RepositoryService repositoryService,
-        PullRequestService pullRequestService,
-        ProjectService projectService
-    ) {
-        log.setLevel(INFO);
+  @Inject
+  public PullRequestLabels(
+      ActiveObjects ao,
+      RepositoryService repositoryService,
+      PullRequestService pullRequestService,
+      ProjectService projectService) {
+    log.setLevel(INFO);
 
-        this.ao = checkNotNull(ao);
-        this.repositoryService = checkNotNull(repositoryService);
-        this.pullRequestService = checkNotNull(pullRequestService);
-        this.projectService = checkNotNull(projectService);
+    this.ao = checkNotNull(ao);
+    this.repositoryService = checkNotNull(repositoryService);
+    this.pullRequestService = checkNotNull(pullRequestService);
+    this.projectService = checkNotNull(projectService);
+  }
+
+  @GET
+  @Produces({MediaType.APPLICATION_JSON})
+  @Path("/pull-requests/{pull_request_id}")
+  public Response listByPullRequest(
+      @PathParam("project_slug") String projectSlug,
+      @PathParam("repository_slug") String repositorySlug,
+      @PathParam("pull_request_id") Long pullRequestId) {
+    Project project = this.projectService.getByKey(projectSlug);
+    if (project == null) {
+      return Response.status(404).build();
     }
 
-    @GET
-    @Produces({MediaType.APPLICATION_JSON})
-    @Path("/pull-requests/{pull_request_id}")
-    public Response listByPullRequest(
-        @PathParam("project_slug") String projectSlug,
-        @PathParam("repository_slug") String repositorySlug,
-        @PathParam("pull_request_id") Long pullRequestId
-    )
-    {
-        Project project = this.projectService.getByKey(projectSlug);
-        if (project == null) {
-            return Response.status(404).build();
-        }
-
-        Repository repository = this.repositoryService.getBySlug(
-            projectSlug,
-            repositorySlug
-        );
-        if (repository == null) {
-            return Response.status(404).build();
-        }
-
-        PullRequest pullRequest = this.pullRequestService.getById(
-            repository.getId(),
-            pullRequestId
-        );
-        if (pullRequest == null) {
-            return Response.status(404).build();
-        }
-
-        final Label[] labels = this.ao.find(
-            Label.class,
-            Query.select().where(
-                "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ?",
-                project.getId(),
-                repository.getId(),
-                pullRequest.getId()
-            )
-        );
-
-
-        return Response.ok(
-            new PullRequestLabelsListResponse(this.getNames(labels))
-        ).build();
+    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    if (repository == null) {
+      return Response.status(404).build();
     }
 
-    @GET
-    @Produces({MediaType.APPLICATION_JSON})
-    @Path("/pull-requests/")
-    public Response listByRepositoryHash(
-        @PathParam("project_slug") String projectSlug,
-        @PathParam("repository_slug") String repositorySlug
-    )
-    {
-        Project project = this.projectService.getByKey(projectSlug);
-        if (project == null) {
-            return Response.status(404).build();
-        }
-
-        Repository repository = this.repositoryService.getBySlug(
-            projectSlug,
-            repositorySlug
-        );
-        if (repository == null) {
-            return Response.status(404).build();
-        }
-
-        final Label[] labels = this.ao.find(
-            Label.class,
-            Query.select().where(
-                "PROJECT_ID = ? AND REPOSITORY_ID = ?",
-                project.getId(),
-                repository.getId()
-            )
-        );
-
-        HashMap<Long,ArrayList<String>> map = new HashMap<Long, ArrayList<String>>();
-        for (Label label: labels) {
-            ArrayList<String> names = map.get(label.getPullRequestId());
-            if (names == null) {
-                names = new ArrayList<String>();
-                map.put(label.getPullRequestId(), names);
-            }
-
-            names.add(label.getName());
-
-            //log.log(SEVERE, new Object(names));
-        }
-
-        return Response.ok(
-            new PullRequestLabelsMapResponse(map)
-        ).build();
+    PullRequest pullRequest = this.pullRequestService.getById(repository.getId(), pullRequestId);
+    if (pullRequest == null) {
+      return Response.status(404).build();
     }
 
-    @GET
-    @Produces({MediaType.APPLICATION_JSON})
-    @Path("/")
-    public Response listByRepository(
-        @PathParam("project_slug") String projectSlug,
-        @PathParam("repository_slug") String repositorySlug
-    )
-    {
-        Project project = this.projectService.getByKey(projectSlug);
-        if (project == null) {
-            return Response.status(404).build();
-        }
-
-        Repository repository = this.repositoryService.getBySlug(
-            projectSlug,
-            repositorySlug
-        );
-        if (repository == null) {
-            return Response.status(404).build();
-        }
-
-        final Label[] labels = this.ao.find(
+    final Label[] labels =
+        this.ao.find(
             Label.class,
-            Query.select().where(
-                "PROJECT_ID = ? AND REPOSITORY_ID = ?",
-                project.getId(),
-                repository.getId()
-            )
-        );
+            Query.select()
+                .where(
+                    "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ?",
+                    project.getId(),
+                    repository.getId(),
+                    pullRequest.getId()));
 
-        return Response.ok(
-            new PullRequestLabelsListResponse(this.getNames(labels))
-        ).build();
+    return Response.ok(new PullRequestLabelsListResponse(this.getNames(labels))).build();
+  }
+
+  @GET
+  @Produces({MediaType.APPLICATION_JSON})
+  @Path("/pull-requests/")
+  public Response listByRepositoryHash(
+      @PathParam("project_slug") String projectSlug,
+      @PathParam("repository_slug") String repositorySlug) {
+    Project project = this.projectService.getByKey(projectSlug);
+    if (project == null) {
+      return Response.status(404).build();
     }
 
-    @POST
-    @Produces({MediaType.APPLICATION_JSON})
-    @Consumes("application/x-www-form-urlencoded")
-    @Path("/pull-requests/{pull_request_id}")
-    public Response add(
-        @PathParam("project_slug") String projectSlug,
-        @PathParam("repository_slug") String repositorySlug,
-        @PathParam("pull_request_id") Long pullRequestId,
-        @FormParam("name") String name
-    )
-    {
-        Project project = this.projectService.getByKey(projectSlug);
-        if (project == null) {
-            return Response.status(404).build();
-        }
+    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    if (repository == null) {
+      return Response.status(404).build();
+    }
 
-        Repository repository = this.repositoryService.getBySlug(
-            projectSlug,
-            repositorySlug
-        );
-        if (repository == null) {
-            return Response.status(404).build();
-        }
-
-        PullRequest pullRequest = this.pullRequestService.getById(
-            repository.getId(),
-            pullRequestId
-        );
-        if (pullRequest == null) {
-            return Response.status(404).build();
-        }
-
-        final int found = this.ao.count(
+    final Label[] labels =
+        this.ao.find(
             Label.class,
-            Query.select().where(
-                "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ? AND NAME = ?",
-                project.getId(),
-                repository.getId(),
-                pullRequest.getId(),
-                name
-            )
-        );
+            Query.select()
+                .where(
+                    "PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
 
-        if (found > 0) {
-            return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
-        }
+    HashMap<Long, ArrayList<String>> map = new HashMap<Long, ArrayList<String>>();
+    for (Label label : labels) {
+      ArrayList<String> names = map.get(label.getPullRequestId());
+      if (names == null) {
+        names = new ArrayList<String>();
+        map.put(label.getPullRequestId(), names);
+      }
 
-        final Label label = this.ao.create(
+      names.add(label.getName());
+
+      // log.log(SEVERE, new Object(names));
+    }
+
+    return Response.ok(new PullRequestLabelsMapResponse(map)).build();
+  }
+
+  @GET
+  @Produces({MediaType.APPLICATION_JSON})
+  @Path("/")
+  public Response listByRepository(
+      @PathParam("project_slug") String projectSlug,
+      @PathParam("repository_slug") String repositorySlug) {
+    Project project = this.projectService.getByKey(projectSlug);
+    if (project == null) {
+      return Response.status(404).build();
+    }
+
+    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    if (repository == null) {
+      return Response.status(404).build();
+    }
+
+    final Label[] labels =
+        this.ao.find(
+            Label.class,
+            Query.select()
+                .where(
+                    "PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
+
+    return Response.ok(new PullRequestLabelsListResponse(this.getNames(labels))).build();
+  }
+
+  @POST
+  @Produces({MediaType.APPLICATION_JSON})
+  @Consumes("application/x-www-form-urlencoded")
+  @Path("/pull-requests/{pull_request_id}")
+  public Response add(
+      @PathParam("project_slug") String projectSlug,
+      @PathParam("repository_slug") String repositorySlug,
+      @PathParam("pull_request_id") Long pullRequestId,
+      @FormParam("name") String name) {
+    Project project = this.projectService.getByKey(projectSlug);
+    if (project == null) {
+      return Response.status(404).build();
+    }
+
+    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    if (repository == null) {
+      return Response.status(404).build();
+    }
+
+    PullRequest pullRequest = this.pullRequestService.getById(repository.getId(), pullRequestId);
+    if (pullRequest == null) {
+      return Response.status(404).build();
+    }
+
+    final int found =
+        this.ao.count(
+            Label.class,
+            Query.select()
+                .where(
+                    "PROJECT_ID = ? "
+                        + "AND REPOSITORY_ID = ? "
+                        + "AND PULL_REQUEST_ID = ? "
+                        + "AND NAME LIKE ?",
+                    project.getId(),
+                    repository.getId(),
+                    pullRequest.getId(),
+                    name));
+
+    if (found > 0) {
+      return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+    }
+
+    final Label label =
+        this.ao.create(
             Label.class,
             new DBParam("PROJECT_ID", project.getId()),
             new DBParam("REPOSITORY_ID", repository.getId()),
             new DBParam("PULL_REQUEST_ID", pullRequest.getId()),
-            new DBParam("NAME", name)
-        );
+            new DBParam("NAME", name));
 
-        this.ao.flush();
+    this.ao.flush();
 
-        return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
-    }
+    return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+  }
 
+  @DELETE
+  @Produces({MediaType.APPLICATION_JSON})
+  @Consumes("application/x-www-form-urlencoded")
+  @Path("/pull-requests/{pull_request_id}")
+  public Response delete(
+      @PathParam("project_slug") String projectSlug,
+      @PathParam("repository_slug") String repositorySlug,
+      @PathParam("pull_request_id") Long pullRequestId,
+      @FormParam("name") String name) {
+    Project project = this.projectService.getByKey(projectSlug);
 
-    @DELETE
-    @Produces({MediaType.APPLICATION_JSON})
-    @Consumes("application/x-www-form-urlencoded")
-    @Path("/pull-requests/{pull_request_id}")
-    public Response delete(
-        @PathParam("project_slug") String projectSlug,
-        @PathParam("repository_slug") String repositorySlug,
-        @PathParam("pull_request_id") Long pullRequestId,
-        @FormParam("name") String name
-    )
-    {
-        Project project = this.projectService.getByKey(projectSlug);
+    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
 
-        Repository repository = this.repositoryService.getBySlug(
-            projectSlug,
-            repositorySlug
-        );
+    PullRequest pullRequest = this.pullRequestService.getById(repository.getId(), pullRequestId);
 
-        PullRequest pullRequest = this.pullRequestService.getById(
-            repository.getId(),
-            pullRequestId
-        );
-
-        final Label[] labels = this.ao.find(
+    final Label[] labels =
+        this.ao.find(
             Label.class,
-            Query.select().where(
-                "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ? AND NAME = ?",
-                project.getId(),
-                repository.getId(),
-                pullRequest.getId(),
-                name
-            )
-        );
+            Query.select()
+                .where(
+                    "PROJECT_ID = ? "
+                        + "AND REPOSITORY_ID = ? "
+                        + "AND PULL_REQUEST_ID = ? "
+                        + "AND NAME = ?",
+                    project.getId(),
+                    repository.getId(),
+                    pullRequest.getId(),
+                    name));
 
-        if (labels.length > 0) {
-            this.ao.delete(labels);
-            this.ao.flush();
-        }
-
-        return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+    if (labels.length > 0) {
+      this.ao.delete(labels);
+      this.ao.flush();
     }
 
-    private String[] getNames(Label[] labels) {
-        Set<String> set = new HashSet<String>();
-        for (int i = 0; i < labels.length; i++) {
-            set.add(labels[i].getName());
-        }
+    return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+  }
 
-        String[] names = set.toArray(new String[set.size()]);
-
-        return names;
+  private String[] getNames(Label[] labels) {
+    Set<String> set = new HashSet<String>();
+    for (int i = 0; i < labels.length; i++) {
+      set.add(labels[i].getName());
     }
+
+    String[] names = set.toArray(new String[set.size()]);
+
+    return names;
+  }
 }

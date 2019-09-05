@@ -8,22 +8,25 @@ import net.java.ao.schema.NotNull;
 
 @Preload
 @Table("PullRequestLabels")
-public interface Label extends Entity
-{
-    @NotNull
-    String getName();
-    @StringLength(StringLength.UNLIMITED)
-    void setName(String name);
+public interface Label extends Entity {
+  @NotNull
+  String getName();
 
-    @NotNull
-    int getProjectId();
-    void setProjectId(int projectid);
+  @StringLength(250)
+  void setName(String name);
 
-    @NotNull
-    int getRepositoryId();
-    void setRepositoryId(int repositoryid);
+  @NotNull
+  int getProjectId();
 
-    @NotNull
-    Long getPullRequestId();
-    void setPullRequestId(Long pullrequestid);
+  void setProjectId(int projectid);
+
+  @NotNull
+  int getRepositoryId();
+
+  void setRepositoryId(int repositoryid);
+
+  @NotNull
+  Long getPullRequestId();
+
+  void setPullRequestId(Long pullrequestid);
 }
