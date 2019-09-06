@@ -95,7 +95,7 @@
         var addPullRequestsLabels = function (pullRequestsLabels) {
             $pullRequestsContent.
                 find('tbody td.summary').
-                filter('tbody td[data-pull-request-id!=""]').
+                filter('tbody tr:not([data-labeled]) td[data-pull-request-id!=""]').
                 each(function(i, td) {
                     var labels = [];
 
@@ -119,6 +119,7 @@
                     });
 
                     $(td).after($cell);
+                    $(td).parent().attr('data-labeled', 'true');
                 });
         }
 
