@@ -13,6 +13,7 @@
 {/template}
 
 /**
+ * @param labels List of labels.
  */
 {template .View}
 <div class="labels-side-panel">
@@ -38,16 +39,12 @@
                 placeholder="{getText('io.reconquest.bitbucket.labels.view.new')}"
                 can-create-values
             >
+            {foreach $label in $labels}
+            <aui-option>{$label}</aui-option>
+            {/foreach}
             </aui-select>
         </p>
     </form>
     </div>
 </div>
-{/template}
-
-/**
- * @param text Label text.
- */
-{template .ViewLabelsSelectOption}
-<aui-option>{$text}</aui-option>
 {/template}

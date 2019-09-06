@@ -192,7 +192,6 @@
             $panel,
             repoLabels
         ) {
-            console.log('init')
             var $select = $panel.find('#labels-new-select');
 
             $select.parents('form').submit(function (e) {
@@ -215,24 +214,15 @@
 
                 return false;
             });
-
-            $.each(
-                repoLabels,
-                function (index, label) {
-                    $select.find('datalist').append(
-                        io.reconquest.bitbucket.labels.ViewLabelsSelectOption({
-                            text: label
-                        })
-                    )
-                }
-            );
         }
 
         var addPullRequestLabelsSidePanel = function (
             pullRequestLabels,
             repoLabels
         ) {
-            var $panel = $(io.reconquest.bitbucket.labels.View());
+            var $panel = $(io.reconquest.bitbucket.labels.View({labels: repoLabels}));
+
+            console.log($panel.html());
 
             $.each(pullRequestLabels, function (index, label) {
                 addLabelToPanel($panel, label, false);
