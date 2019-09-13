@@ -1,72 +1,7 @@
 {namespace io.reconquest.bitbucket.labels}
 
-/**
- * @param text Text that will be displayed in label.
- * @param closeable Is Closeable?
+/*
+ * Can be used later for i18n.
  */
-{template .Label}
-{call aui.labels.label}
-    {param text: $text /}
-    {param extraAttributes: ['data-label-text': $text] /}
-    {param isCloseable: $closeable /}
-{/call}
-{/template}
 
-/**
- */
-{template .Panel}
-<div class="rq-labels-side-panel">
-    <h3>
-    {getText('io.reconquest.bitbucket.labels.view.header')}
-    {call aui.buttons.button}
-        {param type: 'subtle' /}
-        {param iconType: 'aui' /}
-        {param iconClass: 'aui-icon-small aui-iconfont-edit' /}
-        {param extraClasses: ['rq-labels-new-button'] /}
-    {/call}
-    <span class="rq-spinner"></span>
-    </h3>
-    <div class="rq-labels-list"></div>
-    <div class="rq-labels-new">
-    <form class="aui">
-        <input type="hidden" name="label"/>
-    </form>
-    </div>
-</div>
-{/template}
 
-/**
- * @param labels List of labels.
- */
-{template .Select2}
-<select name="labels-select">
-    <option></option>
-    {foreach $label in $labels}
-    <option value="{$label}">{$label}</option>
-    {/foreach}
-</select>
-{/template}
-
-/**
- */
-{template .LabelIcon}
-<span class="label-icon">
-    {call aui.icons.icon}
-        {param useIconFont: true /}
-        {param size: 'small' /}
-        {param icon: 'tag' /}
-    {/call}
-</span>
-{/template}
-
-/**
- * @param name
- * @param isNew
- */
-{template .SelectItem}
-<span class="labels-select-item">
-    {call .LabelIcon}{/call}
-    <span class="name aui-label">{$name}</span>
-    {if $isNew}(new){/if}
-</span>
-{/template}
