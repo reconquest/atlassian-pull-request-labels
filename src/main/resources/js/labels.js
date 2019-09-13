@@ -251,7 +251,7 @@
         }));
     }
 
-    var LabelFilter = function (labels) {
+    var SelectLabelFilter = function (labels) {
         return new SelectLabel({
             empty: 'No labels found',
             placeholder: 'Label',
@@ -536,7 +536,7 @@
 
             this._filter = new PullRequestFilter(
                 this._react,
-                new LabelFilter(labels)
+                new SelectLabelFilter(labels)
             );
 
             this._list = new PullRequestList(this._react, {
