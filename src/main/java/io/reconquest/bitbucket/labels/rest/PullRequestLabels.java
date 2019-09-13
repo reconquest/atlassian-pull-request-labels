@@ -267,16 +267,19 @@ public class PullRequestLabels {
 
     ArrayList<RestPullRequest> filteredPullRequests = new ArrayList<RestPullRequest>();
 
-    Integer searchStart = start;
+    Integer searchOffset = start;
+    Integer searchStart = 0;
     Boolean isLastPage = false;
 
     while (filteredPullRequests.size() < limit) {
+      Boolean hasMore = false;
       PageRequest pageRequest = new PageRequestImpl(searchStart, limit);
 
       Page<PullRequest> page = this.pullRequestService.search(builder.build(), pageRequest);
 
       for (PullRequest pullRequest : page.getValues()) {
         if (filteredPullRequests.size() >= limit) {
+          hasMore = true;
           break;
         }
 
@@ -286,6 +289,11 @@ public class PullRequestLabels {
         }
 
         if (pullRequestLabels.contains(labelName)) {
+          if (searchOffset > 0) {
+            searchOffset--;
+            continue;
+          }
+
           RestPullRequest restPullRequest = new RestPullRequest(pullRequest);
 
           RestPullRequestParticipant pullRequestAuthor =
@@ -310,7 +318,7 @@ public class PullRequestLabels {
       }
 
       if (page.getIsLastPage()) {
-        isLastPage = true;
+        isLastPage = !hasMore;
         break;
       }
 
