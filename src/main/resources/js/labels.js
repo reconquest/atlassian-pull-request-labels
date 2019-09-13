@@ -66,6 +66,14 @@
         return this;
     }
 
+    var ViewNotApplicable = function () {
+        this.mount = function () {
+            return null;
+        }
+
+        return this;
+    }
+
     //
     // UI elements library.
     //
@@ -532,6 +540,9 @@
 
     var ViewPullRequestListWithFilter = function (context, api) {
         this._$ = $('#pull-requests-content');
+        if (this._$.length == 0) {
+            return new ViewNotApplicable();
+        }
 
         // As requested by authentic BB code.
         this._avatarSize = bitbucket.internal.widget.avatar.avatar.avatarSizeInPx({
@@ -550,8 +561,8 @@
             this._list = new PullRequestList(this._react, {
                 build: function() {
                     return api.urls.search(
-                        context.getProject(),
-                        context.getRepo(),
+                        context.getProjectKey(),
+                        context.getRepositorySlug(),
                         $.extend(
                             that._filter.get(),
                             {avatar_size: this._avatarSize},
@@ -582,18 +593,14 @@
         }
 
         this.mount = function() {
-            if (this._$.length == 0) {
-                return null;
-            }
-
             $.when(
                 api.getByRepo(
-                    context.getProject(),
-                    context.getRepo()
+                    context.getProjectKey(),
+                    context.getRepositorySlug()
                 ),
                 api.getByPullRequestList(
-                    context.getProject(),
-                    context.getRepo()
+                    context.getProjectKey(),
+                    context.getRepositorySlug()
                 )
             ).done(function (getByRepoXHR, getByPullRequestListXHR) {
                 this._render(
@@ -610,6 +617,9 @@
 
     var ViewPullRequestDetails = function (context, api) {
         this._$ = $('.plugin-section-primary');
+        if (this._$.length == 0) {
+            return new ViewNotApplicable();
+        }
 
         this._panel = new LabelsPanel({
             query: function (_) {
@@ -618,15 +628,15 @@
 
             add: api.label.bind(
                 api,
-                context.getProject(),
-                context.getRepo(),
+                context.getProjectKey(),
+                context.getRepositorySlug(),
                 context.getPullRequestID()
             ),
 
             remove: api.unlabel.bind(
                 api,
-                context.getProject(),
-                context.getRepo(),
+                context.getProjectKey(),
+                context.getRepositorySlug(),
                 context.getPullRequestID()
             )
         });
@@ -645,18 +655,14 @@
         }
 
         this.mount = function () {
-            if (this._$.length == 0) {
-                return null;
-            }
-
             $.when(
                 api.getByRepo(
-                    context.getProject(),
-                    context.getRepo()
+                    context.getProjectKey(),
+                    context.getRepositorySlug()
                 ),
                 api.getByPullRequest(
-                    context.getProject(),
-                    context.getRepo(),
+                    context.getProjectKey(),
+                    context.getRepositorySlug(),
                     context.getPullRequestID()
                 )
             ).done(function (getByRepoXHR, getByPullRequestXHR) {
@@ -741,16 +747,18 @@
     });
 
     var context = Object.create({
-        getProject: function() {
-            return $('#content').data('projectkey');
+        state: require('bitbucket/util/state'),
+
+        getProjectKey: function() {
+            return this.state.getProject().key
         },
 
-        getRepo: function() {
-            return $('#content').data('reposlug');
+        getRepositorySlug: function() {
+            return this.state.getRepository().slug
         },
 
         getPullRequestID: function() {
-            return $('#content').data('pullrequestid');
+            return this.state.getPullRequest().id
         }
     });
 
