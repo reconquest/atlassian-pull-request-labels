@@ -258,7 +258,7 @@ public class PullRequestLabels {
     }
 
     if (limit == null) {
-      limit = 100;
+      limit = 25;
     }
 
     if (participants.size() > 0) {
@@ -267,8 +267,8 @@ public class PullRequestLabels {
 
     ArrayList<RestPullRequest> filteredPullRequests = new ArrayList<RestPullRequest>();
 
-    Integer searchOffset = start;
     Integer searchStart = start;
+    Boolean isLastPage = false;
 
     while (filteredPullRequests.size() < limit) {
       PageRequest pageRequest = new PageRequestImpl(searchStart, limit);
@@ -286,35 +286,31 @@ public class PullRequestLabels {
         }
 
         if (pullRequestLabels.contains(labelName)) {
-          if (searchOffset > 0) {
-            searchOffset--;
-          } else {
-            RestPullRequest restPullRequest = new RestPullRequest(pullRequest);
+          RestPullRequest restPullRequest = new RestPullRequest(pullRequest);
 
-            RestPullRequestParticipant pullRequestAuthor =
-                (RestPullRequestParticipant) restPullRequest.get(RestPullRequest.AUTHOR);
+          RestPullRequestParticipant pullRequestAuthor =
+              (RestPullRequestParticipant) restPullRequest.get(RestPullRequest.AUTHOR);
 
-            pullRequestAuthor
+          pullRequestAuthor
+              .getUser()
+              .setAvatarUrl(
+                  this.avatarService.getUrlForPerson(
+                      pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
+
+          for (RestPullRequestParticipant pullRequestParticipant : restPullRequest.getReviewers()) {
+            pullRequestParticipant
                 .getUser()
                 .setAvatarUrl(
                     this.avatarService.getUrlForPerson(
                         pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
-
-            for (RestPullRequestParticipant pullRequestParticipant :
-                restPullRequest.getReviewers()) {
-              pullRequestParticipant
-                  .getUser()
-                  .setAvatarUrl(
-                      this.avatarService.getUrlForPerson(
-                          pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
-            }
-
-            filteredPullRequests.add(restPullRequest);
           }
+
+          filteredPullRequests.add(restPullRequest);
         }
       }
 
       if (page.getIsLastPage()) {
+        isLastPage = true;
         break;
       }
 
@@ -323,9 +319,7 @@ public class PullRequestLabels {
 
     Page<RestPullRequest> filteredPage =
         new PageImpl<RestPullRequest>(
-            new PageRequestImpl(start, limit),
-            filteredPullRequests,
-            filteredPullRequests.size() <= limit);
+            new PageRequestImpl(start, limit), filteredPullRequests, isLastPage);
 
     return Response.ok(new RestPage<RestPullRequest>(filteredPage)).build();
   }

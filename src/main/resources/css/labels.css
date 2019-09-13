@@ -2,6 +2,10 @@
     margin-bottom: 5px;
 }
 
+.rq-labels-table-header {
+    min-width: 200px;
+}
+
 .rq-labels-side-panel {
     margin-bottom: 30px;
 }

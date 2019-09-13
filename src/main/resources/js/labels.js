@@ -385,6 +385,7 @@
     var PullRequestList = function(react, builder) {
         this._builder = Options(builder, {
             withParams: function(params) {
+                this.params = params;
                 return this;
             },
 
@@ -453,7 +454,7 @@
         this.LabelsCell = function(labels) {
             this._$ = $('<td class="rq-labels-table-row"/>');
 
-            if (labels.length > 0) {
+            if (labels && labels.length > 0) {
                 this._$.append(IconTag());
 
                 $.each(labels, function (_, label) {
@@ -468,9 +469,12 @@
 
         this._cells = [];
 
-        $.each(labels, function (pr, labels) {
-            this._cells[pr] = new this.LabelsCell(labels);
-        }.bind(this));
+        $.each(
+            labels,
+            function (pr, labels) {
+                this._cells[pr] = new this.LabelsCell(labels);
+            }.bind(this)
+        );
 
         this._render = function ($tbody) {
             $tbody.parent().
@@ -479,8 +483,11 @@
                 find('tbody td.summary').
                     filter('td[data-pull-request-id!=""]').
                     each(function(_, td) {
+                        var id = $(td).data('pull-request-id');
+
                         $(td).after(
-                            this._cells[$(td).data('pull-request-id')]
+                            this._cells[id] = this._cells[id] ||
+                                new this.LabelsCell()
                         );
                     }.bind(this));
         }
@@ -539,17 +546,19 @@
                 new SelectLabelFilter(labels)
             );
 
+            var that = this;
             this._list = new PullRequestList(this._react, {
                 build: function() {
                     return api.urls.search(
                         context.getProject(),
                         context.getRepo(),
                         $.extend(
+                            that._filter.get(),
                             {avatar_size: this._avatarSize},
-                            this._filter.get()
+                            this.params // params are set by internal BB code
                         )
                     )
-                }.bind(this)
+                }
             });
 
             this._filter.change(function(event) {
