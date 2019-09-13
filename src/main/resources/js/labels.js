@@ -356,8 +356,8 @@
     //
     // Plugin-specific components which work with BB internal React state.
     //
-    // These components relies on internal React state and they can hijack
-    // this state to achieve certain tasks.
+    // These components rely on internal React state and they can hijack this
+    // state to achieve certain tasks.
     //
 
     var PullRequestFilter = function (react, filter) {
