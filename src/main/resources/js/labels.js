@@ -742,14 +742,6 @@
 
         getPullRequestID: function() {
             return $('#content').data('pullrequestid');
-        },
-
-        isPullRequestDetailsView: function() {
-            return context.getPullRequestID() != null;
-        },
-
-        isPullRequestListView: function() {
-            return ui.pullRequestList().length > 0;
         }
     });
 
