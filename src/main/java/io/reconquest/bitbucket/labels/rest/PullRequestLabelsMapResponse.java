@@ -7,21 +7,20 @@ import java.util.ArrayList;
 @XmlRootElement(name = "labels")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class PullRequestLabelsMapResponse {
-    @XmlElement(name = "labels")
-    private HashMap<Long,ArrayList<String>> labels;
+  @XmlElement(name = "labels")
+  private HashMap<Long, ArrayList<PullRequestLabelResponse>> labels;
 
-    public PullRequestLabelsMapResponse() {
-    }
+  public PullRequestLabelsMapResponse() {}
 
-    public PullRequestLabelsMapResponse(HashMap<Long,ArrayList<String>> labels) {
-        this.labels = labels;
-    }
+  public PullRequestLabelsMapResponse(HashMap<Long, ArrayList<PullRequestLabelResponse>> labels) {
+    this.labels = labels;
+  }
 
-    public HashMap<Long,ArrayList<String>> getLabels() {
-        return labels;
-    }
+  public HashMap<Long, ArrayList<PullRequestLabelResponse>> getLabels() {
+    return labels;
+  }
 
-    public void setLabels(HashMap<Long,ArrayList<String>> labels) {
-        this.labels = labels;
-    }
+  public void setLabels(HashMap<Long, ArrayList<PullRequestLabelResponse>> labels) {
+    this.labels = labels;
+  }
 }

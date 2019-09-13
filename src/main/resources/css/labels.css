@@ -1,16 +1,66 @@
-.labels-side-panel {
+.rq-label {
+    margin-bottom: 5px;
+}
+
+.rq-labels-side-panel {
     margin-bottom: 30px;
 }
 
-.labels-side-panel .labels-list {
+.rq-labels-side-panel .rq-labels-list {
     margin-top: 1em;
 }
 
-.labels-side-panel .labels-new {
-    margin-top: 1em;
+.rq-labels-side-panel .rq-labels-button-edit {
+    margin-top: -5px;
+    margin-left: 5px;
+    position: absolute;
+}
+
+.rq-labels-side-panel .rq-labels-edit-form {
+    margin-top: 15px;
     display: none;
 }
 
-.labels-side-panel div.spinner {
-    padding-left: 15px;
+.rq-labels-side-panel .rq-spinner {
+    position: absolute;
+    margin-left: -30px;
+}
+
+.aui-label.aui-label-closeable.rq-label .aui-icon-close {
+    display: none;
+}
+
+.aui-label.aui-label-closeable.rq-label {
+    padding-right: 5px;
+}
+
+.rq-labels-side-panel.rq-editable .rq-labels-button-edit {
+    display: none;
+}
+
+.rq-labels-side-panel.rq-editable .aui-label.aui-label-closeable.rq-label .aui-icon-close {
+    display: inline;
+}
+
+.rq-labels-side-panel.rq-editable .aui-label {
+    padding-right: 18px;
+}
+
+.rq-labels-side-panel.rq-editable .rq-labels-edit-form {
+    display: block;
+}
+
+.rq-labels-icon-tag {
+    margin-right: 5px;
+}
+
+.aui-dropdown2.aui-style-default.rq-labels-select {
+    padding: 0;
+}
+
+.rq-labels-select .select2-search {
+    background-color: #f4f5f7;
+    border-bottom: 1px solid #dfe1e6;
+    padding: 10px;
+    position: relative;
 }

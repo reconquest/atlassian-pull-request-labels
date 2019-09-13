@@ -4,23 +4,21 @@ import javax.xml.bind.annotation.*;
 
 @XmlRootElement(name = "labels")
 @XmlAccessorType(XmlAccessType.FIELD)
-
 public class PullRequestLabelsListResponse {
-    @XmlElement(name = "labels")
-    private String[] labels;
+  @XmlElement(name = "labels")
+  private PullRequestLabelResponse[] labels;
 
-    public PullRequestLabelsListResponse() {
-    }
+  public PullRequestLabelsListResponse() {}
 
-    public PullRequestLabelsListResponse(String[] labels) {
-        this.labels = labels;
-    }
+  public PullRequestLabelsListResponse(PullRequestLabelResponse[] labels) {
+    this.labels = labels;
+  }
 
-    public String[] getLabels() {
-        return labels;
-    }
+  public PullRequestLabelResponse[] getLabels() {
+    return labels;
+  }
 
-    public void setLabels(String[] labels) {
-        this.labels = labels;
-    }
+  public void setLabels(PullRequestLabelResponse[] labels) {
+    this.labels = labels;
+  }
 }

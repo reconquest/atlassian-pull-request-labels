@@ -13,38 +13,60 @@
 {/template}
 
 /**
- * @param labels List of labels.
  */
-{template .View}
-<div class="labels-side-panel">
+{template .Panel}
+<div class="rq-labels-side-panel">
     <h3>
     {getText('io.reconquest.bitbucket.labels.view.header')}
     {call aui.buttons.button}
-        {param id: 'labels-edit-button' /}
-        {param text: '' /}
         {param type: 'subtle' /}
         {param iconType: 'aui' /}
         {param iconClass: 'aui-icon-small aui-iconfont-edit' /}
-        {param iconText: 'Edit' /}
+        {param extraClasses: ['rq-labels-new-button'] /}
     {/call}
-    <span class="spinner"></span>
+    <span class="rq-spinner"></span>
     </h3>
-    <div class="labels-list"></div>
-    <div class="labels-new">
+    <div class="rq-labels-list"></div>
+    <div class="rq-labels-new">
     <form class="aui">
-        <p>
-            <aui-select
-                id="labels-new-select"
-                name="label"
-                placeholder="{getText('io.reconquest.bitbucket.labels.view.new')}"
-                can-create-values
-            >
-            {foreach $label in $labels}
-            <aui-option>{$label}</aui-option>
-            {/foreach}
-            </aui-select>
-        </p>
+        <input type="hidden" name="label"/>
     </form>
     </div>
 </div>
+{/template}
+
+/**
+ * @param labels List of labels.
+ */
+{template .Select2}
+<select name="labels-select">
+    <option></option>
+    {foreach $label in $labels}
+    <option value="{$label}">{$label}</option>
+    {/foreach}
+</select>
+{/template}
+
+/**
+ */
+{template .LabelIcon}
+<span class="label-icon">
+    {call aui.icons.icon}
+        {param useIconFont: true /}
+        {param size: 'small' /}
+        {param icon: 'tag' /}
+    {/call}
+</span>
+{/template}
+
+/**
+ * @param name
+ * @param isNew
+ */
+{template .SelectItem}
+<span class="labels-select-item">
+    {call .LabelIcon}{/call}
+    <span class="name aui-label">{$name}</span>
+    {if $isNew}(new){/if}
+</span>
 {/template}

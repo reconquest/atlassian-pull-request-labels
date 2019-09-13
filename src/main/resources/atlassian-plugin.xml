@@ -22,10 +22,10 @@
             <transformer key="jsI18n"/>
         </transformation>
 
-        <resource name="labels.js" type="download" location="js/labels.js"/>
+        <!--<resource name="labels.js" type="download" location="js/labels.js"/>-->
 
         <!-- UNCOMMENT TO USE JS LOADER FOR SCRIPT TO QUICKEN DEVELOPMENT -->
-        <!--<resource name="labels-loader.js" type="download" location="js/labels-loader.js"/>-->
+        <resource name="labels-loader.js" type="download" location="js/labels-loader.js"/>
 
         <resource name="labels.css" type="download" location="css/labels.css"/>
         <resource name="labels.soy.js" type="download" location="/soy/labels.soy"/>
