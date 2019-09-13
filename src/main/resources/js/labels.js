@@ -421,7 +421,7 @@
             // filter.
             //
             // On the server side we mimic authentic response from native
-            // pull request list endpoint to deceive native BB Reach code and
+            // pull request list endpoint to deceive native BB React code and
             // render response from our plugin.
             this._provider._getBuilder = function() {
                 return this._builder;
