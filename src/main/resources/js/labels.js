@@ -627,14 +627,14 @@
                 return this._labels;
             }.bind(this),
 
-            add: api.label.bind(
+            add: api.addLabel.bind(
                 api,
                 context.getProjectKey(),
                 context.getRepositorySlug(),
                 context.getPullRequestID()
             ),
 
-            remove: api.unlabel.bind(
+            remove: api.removeLabel.bind(
                 api,
                 context.getProjectKey(),
                 context.getRepositorySlug(),
@@ -695,7 +695,7 @@
             },
 
             byPullRequestList: function(project, repo) {
-                return this.byRepo(project, repo) + '/pull-requests/';
+                return this.byRepo(project, repo) + 'pull-requests/';
             },
 
             byPullRequest: function(project, repo, pr) {
@@ -720,7 +720,7 @@
             return $.get(this.urls.byPullRequestList(project, repo));
         },
 
-        label: function(project, repo, pr, label) {
+        addLabel: function(project, repo, pr, label) {
             return $.ajax(
                 this.urls.byPullRequest(project, repo, pr),
                 {
@@ -733,7 +733,7 @@
             );
         },
 
-        unlabel: function(project, repo, pr, label) {
+        removeLabel: function(project, repo, pr, label) {
             return $.ajax(
                 this.urls.byPullRequest(project, repo, pr),
                 {
