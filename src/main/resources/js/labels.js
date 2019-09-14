@@ -23,11 +23,11 @@
         this.state = function() {
             return $(element)[0].
                 _reactRootContainer.
-                _internalRoot.
-                    current.
-                    child.
-                        stateNode.
-                        state;
+                    _internalRoot.
+                        current.
+                            child.
+                                stateNode.
+                                    state;
         }
 
         return this;
@@ -333,29 +333,30 @@
             );
         }
 
+        this._spinner = new Spinner();
+        this._$labels = $('<div class="rq-labels-list"/>');
+        this._select  = new SelectLabel({
+            empty: 'Enter New Label',
+            placeholder: 'Add Label',
+            query: this._query.bind(this),
+            on: {
+                create: this.create.bind(this)
+            }
+        });
+
         this._$ = $('<div class="rq-labels-side-panel"/>').append(
-                            /**/ $('<h3/>').append(
-            this._spinner = /**/     new Spinner(),
-                            /**/     'Labels',
-                            /**/     new ButtonIconEdit().
-                            /**/         click(
-                            /**/             function() { this.edit() }.
-                            /**/                bind(this)
-                            /**/         )
-                            /**/ ),
-            this._$labels = /**/ $('<div class="rq-labels-list"/>'),
-                            /**/ $('<form class="rq-labels-edit-form"/>').
-                            /**/     submit(function() { return false }).
-                            /**/     append(
-            this._select  = /**/         new SelectLabel({
-                            /**/            empty: 'Enter New Label',
-                            /**/            placeholder: 'Add Label',
-                            /**/            query: this._query.bind(this),
-                            /**/            on: {
-                            /**/                create: this.create.bind(this)
-                            /**/            }
-                            /**/        })
-                            /**/     )
+            $('<h3/>').append(
+                this._spinner,
+                'Labels',
+                new ButtonIconEdit().
+                click(
+                    function() { this.edit() }.bind(this)
+                )
+            ),
+            this._$labels,
+            $('<form class="rq-labels-edit-form"/>').
+            submit(function() { return false }).
+            append(this._select)
         );
 
         return $.extend(this._$, this);
