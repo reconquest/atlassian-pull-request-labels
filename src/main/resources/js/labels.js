@@ -74,6 +74,102 @@
         return this;
     }
 
+    // Providers of Labels Cells
+    //
+    // Should implement following interface:
+    //
+    // provide(id, callback) generates a cell for specified PR id
+    //     and invokes callback while passing generated cell as an argument
+
+    var LabelsCellProviderStatic = function (labels) {
+        this._cells = [];
+
+        $.each(
+            labels,
+            function (pr, labels) {
+                this._cells[pr] = new LabelsCell(labels);
+            }.bind(this)
+        );
+
+        this.provide = function (id, callback) {
+            this._cells[id] = this._cells[id] || new LabelsCell()
+
+            callback(this._cells[id])
+        }
+
+        return this;
+    }
+
+    var LabelsCellProviderDynamic = function (selector) {
+        // main idea of Dynamic Provider is to collect all PR/Repository ID on
+        // the page, retrieve data from backend for given repos, store it in
+        // memory and use for all PRs
+        //
+        // if id in provide() is unknown (not in the list of collected PRs),
+        // then we need to collect ids again and retrieve data from backend
+        this._repositories = {};
+        this._pullRequests = {};
+
+        this._cells = [];
+
+        this._updating = false;
+        this._callbacks = [];
+
+        this._parseRepositoriesID = function () {
+            $(selector).find('td div.title a').each(function(_, item) {
+                this._pullRequests[$(item).data('pull-request-id')] = 1;
+                this._repositories[$(item).data('repository-id')] = 1;
+            }.bind(this))
+        }
+
+        this._updateLabels = function () {
+            this._updating = true;
+
+            this._parseRepositoriesID();
+
+            $.when(
+                api.getByRepositoryIDs(Object.keys(this._repositories))
+            ).done(function (response) {
+                $.each(
+                    response.labels,
+                    function (pr, labels) {
+                        if (!this._cells[pr]) {
+                            this._cells[pr] = new LabelsCell(labels);
+                        }
+                    }.bind(this)
+                );
+
+                $.each(this._callbacks, function(_, callback) {
+                    callback()
+                })
+                this._callbacks.length = 0;
+
+                this._updating = false;
+            }.bind(this));
+        }
+
+        this.provide = function (id, callback) {
+            if (this._updating) {
+                this._callbacks.push(function() {
+                    callback(this._cells[id] = this._cells[id] || new LabelsCell())
+                }.bind(this))
+                return;
+            }
+
+            if (!this._pullRequests[id] && !this._updating) {
+                this._callbacks.push(function() {
+                    callback(this._cells[id] = this._cells[id] || new LabelsCell())
+                }.bind(this))
+
+                this._updateLabels();
+            } else {
+                callback(this._cells[id] = this._cells[id] || new LabelsCell())
+            }
+        }
+
+        return this;
+    }
+
     //
     // UI elements library.
     //
@@ -121,6 +217,20 @@
             find('.aui-icon-close').
             click(function() { close.bind($(this).parent())(); }).
             end();
+    }
+
+    var LabelsCell = function(labels) {
+        this._$ = $('<td class="rq-labels-table-row"/>');
+
+        if (labels && labels.length > 0) {
+            this._$.append(IconTag());
+
+            $.each(labels, function (_, label) {
+                this._$.append(new Label(label.name));
+            }.bind(this));
+        }
+
+        return this._$;
     }
 
     var Spinner = function(options) {
@@ -452,7 +562,7 @@
     // root element.
     //
 
-    var PullRequestTable = function (labels) {
+    var PullRequestTable = function (labelsProvider) {
         this.LabelsHeader = function () {
             return $('<th/>', {
                 "text": "Labels",
@@ -460,48 +570,47 @@
             });
         }
 
-        this.LabelsCell = function(labels) {
-            this._$ = $('<td class="rq-labels-table-row"/>');
-
-            if (labels && labels.length > 0) {
-                this._$.append(IconTag());
-
-                $.each(labels, function (_, label) {
-                    this._$.append(new Label(label.name));
-                }.bind(this));
-            }
-
-            return this._$;
-        }
-
         this._header = new this.LabelsHeader();
 
-        this._cells = [];
+        this._extractPullRequestID = function(row) {
+            var $td = $(row).find('td.summary');
 
-        $.each(
-            labels,
-            function (pr, labels) {
-                this._cells[pr] = new this.LabelsCell(labels);
-            }.bind(this)
-        );
+            var id = $td.data('pull-request-id')
+            if (id) {
+                return id;
+            }
+
+            id = $td.find('div a').data('pull-request-id')
+            if (id) {
+                return id;
+            }
+
+            return "";
+        }
 
         this._render = function ($tbody) {
             $tbody.parent().
-                find('thead th.summary').
-                    after(this._header).end().
-                find('tbody td.summary').
-                    filter('td[data-pull-request-id!=""]').
-                    each(function(_, td) {
-                        var id = $(td).data('pull-request-id');
+                find('thead th.reviewers').
+                before(this._header);
 
-                        $(td).after(
-                            this._cells[id] = this._cells[id] ||
-                                new this.LabelsCell()
-                        );
-                    }.bind(this));
+            $tbody.parent().
+                find('tbody tr').
+                each(function(_, row) {
+                    var id = this._extractPullRequestID(row)
+                    if (!id) {
+                        return;
+                    }
+
+                    labelsProvider.provide(id, function(cell) {
+                        $(row).find('td.reviewers').before(cell);
+                    })
+                }.bind(this));
         }
 
-        this._observer = new Observer('tbody', this._render.bind(this));
+        this._observer = new Observer(
+            'tbody',
+            this._render.bind(this)
+        );
 
         this.mount = function(table) {
             this._observer.observe(table);
@@ -586,7 +695,7 @@
 
             this._table = {
                 filter: new PullRequestTableFilter(this._filter),
-                content: PullRequestTable(mapping)
+                content: new PullRequestTable(new LabelsCellProviderStatic(mapping))
             }
 
             this._table.filter.mount(this._$.find('.filter-bar'))
@@ -595,7 +704,7 @@
 
         this.mount = function() {
             $.when(
-                api.getByRepo(
+                api.getByRepository(
                     context.getProjectKey(),
                     context.getRepositorySlug()
                 ),
@@ -603,9 +712,9 @@
                     context.getProjectKey(),
                     context.getRepositorySlug()
                 )
-            ).done(function (getByRepoXHR, getByPullRequestListXHR) {
+            ).done(function (getByRepositoryXHR, getByPullRequestListXHR) {
                 this._render(
-                    getByRepoXHR[0].labels,
+                    getByRepositoryXHR[0].labels,
                     getByPullRequestListXHR[0].labels
                 );
             }.bind(this));
@@ -657,7 +766,7 @@
 
         this.mount = function () {
             $.when(
-                api.getByRepo(
+                api.getByRepository(
                     context.getProjectKey(),
                     context.getRepositorySlug()
                 ),
@@ -666,9 +775,9 @@
                     context.getRepositorySlug(),
                     context.getPullRequestID()
                 )
-            ).done(function (getByRepoXHR, getByPullRequestXHR) {
+            ).done(function (getByRepositoryXHR, getByPullRequestXHR) {
                 this._render(
-                    getByRepoXHR[0].labels,
+                    getByRepositoryXHR[0].labels,
                     getByPullRequestXHR[0].labels
                 );
             }.bind(this));
@@ -677,7 +786,26 @@
         }
 
         return this;
+    };
+
+    var ViewDashboard = function (context, api) {
+        this._$ = $('table.dashboard-pull-requests-table');
+        if (this._$.length == 0) {
+            return new ViewNotApplicable();
+        }
+
+        this._provider = new LabelsCellProviderDynamic(this._$);
+
+        this.mount = function() {
+            this._$.each(function(_, container) {
+                var table = new PullRequestTable(this._provider);
+                table.mount($(container));
+            }.bind(this));
+        }
+
+        return this;
     }
+
 
     //
     // Global state objects.
@@ -690,12 +818,16 @@
                 return baseURL + '/rest/io.reconquest.bitbucket.labels/1.0/';
             },
 
-            byRepo: function(project, repo) {
+            list: function () {
+                return this.root() + '/list';
+            },
+
+            byRepository: function(project, repo) {
                 return this.root() + project + '/' + repo + '/';
             },
 
             byPullRequestList: function(project, repo) {
-                return this.byRepo(project, repo) + 'pull-requests/';
+                return this.byRepository(project, repo) + 'pull-requests/';
             },
 
             byPullRequest: function(project, repo, pr) {
@@ -708,8 +840,21 @@
             },
         },
 
-        getByRepo: function(project, repo) {
-            return $.get(this.urls.byRepo(project, repo));
+        getByRepositoryIDs: function(repos) {
+            return $.ajax(
+                this.urls.list(),
+                {
+                    data: {repository_id: repos},
+                    method: "POST",
+                    headers: {
+                        "X-Atlassian-Token": "no-check"
+                    }
+                }
+            );
+        },
+
+        getByRepository: function(project, repo) {
+            return $.get(this.urls.byRepository(project, repo));
         },
 
         getByPullRequest: function(project, repo, pr) {
@@ -765,7 +910,8 @@
 
     var views = [
         ViewPullRequestDetails,
-        ViewPullRequestListWithFilter
+        ViewPullRequestListWithFilter,
+        ViewDashboard
     ];
 
     //
