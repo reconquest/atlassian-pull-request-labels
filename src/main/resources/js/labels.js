@@ -101,12 +101,12 @@
     }
 
     var LabelsCellProviderDynamic = function (selector) {
-        // main idea of Dynamic Provider is to collect all PR/Repository ID on
+        // Main idea of Dynamic Provider is to collect all PR/Repository ID on
         // the page, retrieve data from backend for given repos, store it in
         // memory and use for all PRs
         //
-        // if id in provide() is unknown (not in the list of collected PRs),
-        // then we need to collect ids again and retrieve data from backend
+        // If id in provide() is unknown (not in the list of collected PRs),
+        // then we need to collect ids again and retrieve data from backend.
         this._repositories = {};
         this._pullRequests = {};
 
@@ -133,9 +133,8 @@
                 $.each(
                     response.labels,
                     function (pr, labels) {
-                        if (!this._cells[pr]) {
-                            this._cells[pr] = new LabelsCell(labels);
-                        }
+                        this._cells[pr] = this._cells[pr] ||
+                            new LabelsCell(labels);
                     }.bind(this)
                 );
 
@@ -148,22 +147,20 @@
             }.bind(this));
         }
 
+        this._callback = function(id, fn) {
+            return fn(this._cells[id] = this._cells[id] || new LabelsCell())
+        }
+
         this.provide = function (id, callback) {
-            if (this._updating) {
-                this._callbacks.push(function() {
-                    callback(this._cells[id] = this._cells[id] || new LabelsCell())
-                }.bind(this))
-                return;
-            }
+            if (this._updating || !this._pullRequests[id]) {
+                this._callbacks.push(this._callback.bind(this, id, callback))
 
-            if (!this._pullRequests[id] && !this._updating) {
-                this._callbacks.push(function() {
-                    callback(this._cells[id] = this._cells[id] || new LabelsCell())
-                }.bind(this))
-
-                this._updateLabels();
-            } else {
-                callback(this._cells[id] = this._cells[id] || new LabelsCell())
+                if (!this._updating) {
+                    this._updateLabels();
+                    if (!this._pullRequests[id]) {
+                        this._callback(id, callback);
+                    }
+                }
             }
         }
 
@@ -228,6 +225,8 @@
             $.each(labels, function (_, label) {
                 this._$.append(new Label(label.name));
             }.bind(this));
+        } else {
+            this._$.append('&nbsp;'); // prevent table collapse in Firefox
         }
 
         return this._$;
