@@ -7,6 +7,7 @@ import static java.util.logging.Level.INFO;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.inject.Inject;
@@ -51,7 +52,7 @@ import io.reconquest.bitbucket.labels.ao.Label;
 import net.java.ao.DBParam;
 import net.java.ao.Query;
 
-@Path("/{project_slug}/{repository_slug}/")
+@Path("/")
 @Scanned
 public class PullRequestLabels {
   @ComponentImport private final ActiveObjects ao;
@@ -88,7 +89,7 @@ public class PullRequestLabels {
 
   @GET
   @Produces({MediaType.APPLICATION_JSON})
-  @Path("/pull-requests/{pull_request_id}")
+  @Path("/{project_slug}/{repository_slug}/pull-requests/{pull_request_id}")
   public Response listByPullRequest(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug,
@@ -123,7 +124,7 @@ public class PullRequestLabels {
 
   @GET
   @Produces({MediaType.APPLICATION_JSON})
-  @Path("/pull-requests/")
+  @Path("/{project_slug}/{repository_slug}/pull-requests/")
   public Response listByRepositoryHash(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug) {
@@ -162,7 +163,7 @@ public class PullRequestLabels {
 
   @GET
   @Produces({MediaType.APPLICATION_JSON})
-  @Path("/pull-requests/:search")
+  @Path("/{project_slug}/{repository_slug}/pull-requests/:search")
   public Response searchPullRequestsByLabel(
       @PathParam("avatar_size") Integer avatarSize,
       @PathParam("project_slug") String projectSlug,
@@ -334,7 +335,7 @@ public class PullRequestLabels {
 
   @GET
   @Produces({MediaType.APPLICATION_JSON})
-  @Path("/")
+  @Path("/{project_slug}/{repository_slug}/")
   public Response listByRepository(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug) {
@@ -360,8 +361,44 @@ public class PullRequestLabels {
 
   @POST
   @Produces({MediaType.APPLICATION_JSON})
+  @Path("/list")
+  public Response list(@FormParam("repository_id") List<Integer> repositories) {
+    String[] ids = new String[repositories.size()];
+    for (int i = 0; i < repositories.toArray().length; i++) {
+      Integer id = repositories.get(i);
+      Repository repository = this.repositoryService.getById(id);
+      if (repository == null) {
+        return Response.status(404).build();
+      }
+
+      ids[i] = String.valueOf(id);
+    }
+
+    String query = String.join(",", ids);
+
+    final Label[] labels =
+        this.ao.find(Label.class, Query.select().where("REPOSITORY_ID IN (" + query + ")"));
+
+    HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
+        new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
+
+    for (Label label : labels) {
+      ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(label.getPullRequestId());
+      if (pullRequestLabels == null) {
+        pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
+        map.put(label.getPullRequestId(), pullRequestLabels);
+      }
+
+      pullRequestLabels.add(new PullRequestLabelResponse(label.getID(), label.getName()));
+    }
+
+    return Response.ok(new PullRequestLabelsMapResponse(map)).build();
+  }
+
+  @POST
+  @Produces({MediaType.APPLICATION_JSON})
   @Consumes("application/x-www-form-urlencoded")
-  @Path("/pull-requests/{pull_request_id}")
+  @Path("/{project_slug}/{repository_slug}/pull-requests/{pull_request_id}")
   public Response add(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug,
@@ -415,17 +452,26 @@ public class PullRequestLabels {
   @DELETE
   @Produces({MediaType.APPLICATION_JSON})
   @Consumes("application/x-www-form-urlencoded")
-  @Path("/pull-requests/{pull_request_id}")
+  @Path("/{project_slug}/{repository_slug}/pull-requests/{pull_request_id}")
   public Response delete(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId,
       @FormParam("name") String name) {
     Project project = this.projectService.getByKey(projectSlug);
+    if (project == null) {
+      return Response.status(404).build();
+    }
 
     Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    if (repository == null) {
+      return Response.status(404).build();
+    }
 
     PullRequest pullRequest = this.pullRequestService.getById(repository.getId(), pullRequestId);
+    if (pullRequest == null) {
+      return Response.status(404).build();
+    }
 
     final Label[] labels =
         this.ao.find(
