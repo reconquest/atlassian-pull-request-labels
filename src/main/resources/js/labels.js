@@ -1,9 +1,9 @@
-(function($, baseURL) {
+(function ($) {
     //
     // Utility classes.
     //
 
-    var Options = function(options, defaults) {
+    var Options = function (options, defaults) {
         return $.extend(defaults, options);
     }
 
@@ -19,9 +19,14 @@
         return components.join("&");
     }
 
-    var React = function (element) {
+    var React_16 = function (element) {
+        var element = $(element)[0];
+        if (!element._reactRootContainer) {
+            return null;
+        }
+
         this.state = function() {
-            return $(element)[0].
+            return element.
                 _reactRootContainer.
                     _internalRoot.
                         current.
@@ -31,6 +36,32 @@
         }
 
         return this;
+    }
+
+    var React_15 = function (element) {
+        var element = $(element)[0];
+        var key = Object.keys(element).find(function (key) {
+            return key.startsWith("__reactInternalInstance$");
+        });
+
+        if (!key) {
+            this.state = function() {
+                return null;
+            }
+
+            return this;
+        } else {
+            var pointer = element[key];
+            while (pointer._currentElement._owner != null) {
+                pointer = pointer._currentElement._owner;
+            }
+
+            this.state = function() {
+                return pointer._instance.state;
+            }
+
+            return this;
+        }
     }
 
     var Observer = function (selector, fn) {
@@ -69,99 +100,6 @@
     var ViewNotApplicable = function () {
         this.mount = function () {
             return null;
-        }
-
-        return this;
-    }
-
-    // Providers of Labels Cells
-    //
-    // Should implement following interface:
-    //
-    // provide(id, callback) generates a cell for specified PR id
-    //     and invokes callback while passing generated cell as an argument
-
-    var LabelsCellProviderStatic = function (labels) {
-        this._cells = [];
-
-        $.each(
-            labels,
-            function (pr, labels) {
-                this._cells[pr] = new LabelsCell(labels);
-            }.bind(this)
-        );
-
-        this.provide = function (id, callback) {
-            this._cells[id] = this._cells[id] || new LabelsCell()
-
-            callback(this._cells[id])
-        }
-
-        return this;
-    }
-
-    var LabelsCellProviderDynamic = function (selector) {
-        // Main idea of Dynamic Provider is to collect all PR/Repository ID on
-        // the page, retrieve data from backend for given repos, store it in
-        // memory and use for all PRs
-        //
-        // If id in provide() is unknown (not in the list of collected PRs),
-        // then we need to collect ids again and retrieve data from backend.
-        this._repositories = {};
-        this._pullRequests = {};
-
-        this._cells = [];
-
-        this._updating = false;
-        this._callbacks = [];
-
-        this._parseRepositoriesID = function () {
-            $(selector).find('td div.title a').each(function(_, item) {
-                this._pullRequests[$(item).data('pull-request-id')] = 1;
-                this._repositories[$(item).data('repository-id')] = 1;
-            }.bind(this))
-        }
-
-        this._updateLabels = function () {
-            this._updating = true;
-
-            this._parseRepositoriesID();
-
-            $.when(
-                api.getByRepositoryIDs(Object.keys(this._repositories))
-            ).done(function (response) {
-                $.each(
-                    response.labels,
-                    function (pr, labels) {
-                        this._cells[pr] = this._cells[pr] ||
-                            new LabelsCell(labels);
-                    }.bind(this)
-                );
-
-                $.each(this._callbacks, function(_, callback) {
-                    callback()
-                })
-                this._callbacks.length = 0;
-
-                this._updating = false;
-            }.bind(this));
-        }
-
-        this._callback = function(id, fn) {
-            return fn(this._cells[id] = this._cells[id] || new LabelsCell())
-        }
-
-        this.provide = function (id, callback) {
-            if (this._updating || !this._pullRequests[id]) {
-                this._callbacks.push(this._callback.bind(this, id, callback))
-
-                if (!this._updating) {
-                    this._updateLabels();
-                    if (!this._pullRequests[id]) {
-                        this._callback(id, callback);
-                    }
-                }
-            }
         }
 
         return this;
@@ -210,7 +148,19 @@
             extraClasses: ['rq-label']
         }
 
-        return $(aui.labels.label(config)).
+        if (aui.labels) {
+            this._$ = $(aui.labels.label(config));
+        } else {
+            this._$ = $('<span class="aui-label"/>').text(text);
+
+            if ($.isFunction(close)) {
+                this._$.
+                    addClass("aui-label-closeable").
+                    append($('<span class="aui-icon aui-icon-close"/>'))
+            }
+        }
+
+        return this._$.
             find('.aui-icon-close').
             click(function() { close.bind($(this).parent())(); }).
             end();
@@ -345,8 +295,32 @@
     // plugin specific properties.
     //
 
-    var IconTag = function() {
+    var AvatarSize_Native = function (size) {
+        this.px = function() {
+            return bitbucket.internal.widget.avatar.avatar.avatarSizeInPx({
+                size: size || 'medium'
+            });
+        }
+
+        return this;
+    }
+
+    var AvatarSize_64 = function() {
+        this.px = function () {
+            return 64;
+        }
+
+        return this;
+    }
+
+    // Bitbucket >= 6.0
+    var IconTag_Native = function() {
         return Icon('tag', {classes: 'rq-labels-icon-tag'});
+    }
+
+    // Bitbucket < 6.0
+    var IconTag_DevTools = function() {
+        return Icon('devtools-tag', {classes: 'rq-labels-icon-tag'});
     }
 
     var ButtonIconEdit = function() {
@@ -469,6 +443,99 @@
         );
 
         return $.extend(this._$, this);
+    }
+
+    // Providers of Labels Cells
+    //
+    // Should implement following interface:
+    //
+    // provide(id, callback) generates a cell for specified PR id
+    //     and invokes callback while passing generated cell as an argument
+
+    var LabelsCellProviderStatic = function (labels) {
+        this._cells = [];
+
+        $.each(
+            labels,
+            function (pr, labels) {
+                this._cells[pr] = new LabelsCell(labels);
+            }.bind(this)
+        );
+
+        this.provide = function (id, callback) {
+            this._cells[id] = this._cells[id] || new LabelsCell()
+
+            callback(this._cells[id])
+        }
+
+        return this;
+    }
+
+    var LabelsCellProviderDynamic = function (selector) {
+        // Main idea of Dynamic Provider is to collect all PR/Repository ID on
+        // the page, retrieve data from backend for given repos, store it in
+        // memory and use for all PRs
+        //
+        // If id in provide() is unknown (not in the list of collected PRs),
+        // then we need to collect ids again and retrieve data from backend.
+        this._repositories = {};
+        this._pullRequests = {};
+
+        this._cells = [];
+
+        this._updating = false;
+        this._callbacks = [];
+
+        this._parseRepositoriesID = function () {
+            $(selector).find('td div.title a').each(function(_, item) {
+                this._pullRequests[$(item).data('pull-request-id')] = 1;
+                this._repositories[$(item).data('repository-id')] = 1;
+            }.bind(this))
+        }
+
+        this._updateLabels = function () {
+            this._updating = true;
+
+            this._parseRepositoriesID();
+
+            $.when(
+                api.getByRepositoryIDs(Object.keys(this._repositories))
+            ).done(function (response) {
+                $.each(
+                    response.labels,
+                    function (pr, labels) {
+                        this._cells[pr] = this._cells[pr] ||
+                            new LabelsCell(labels);
+                    }.bind(this)
+                );
+
+                $.each(this._callbacks, function(_, callback) {
+                    callback()
+                })
+                this._callbacks.length = 0;
+
+                this._updating = false;
+            }.bind(this));
+        }
+
+        this._callback = function(id, fn) {
+            return fn(this._cells[id] = this._cells[id] || new LabelsCell())
+        }
+
+        this.provide = function (id, callback) {
+            if (this._updating || !this._pullRequests[id]) {
+                this._callbacks.push(this._callback.bind(this, id, callback))
+
+                if (!this._updating) {
+                    this._updateLabels();
+                    if (!this._pullRequests[id]) {
+                        this._callback(id, callback);
+                    }
+                }
+            }
+        }
+
+        return this;
     }
 
     //
@@ -653,13 +720,15 @@
             return new ViewNotApplicable();
         }
 
-        // As requested by authentic BB code.
-        this._avatarSize = bitbucket.internal.widget.avatar.avatar.avatarSizeInPx({
-            size: 'medium'
-        });
+        this._avatarSize = new AvatarSize('medium');
 
         this._render = function(labels, mapping) {
             this._react = new React(this._$);
+
+            // Bitbucket <= 5.0
+            if (this._react.state() == null) {
+                this._react = new React(this._$.find('.pull-requests-table'))
+            }
 
             this._filter = new PullRequestFilter(
                 this._react,
@@ -674,7 +743,7 @@
                         context.getRepositorySlug(),
                         $.extend(
                             that._filter.get(),
-                            {avatar_size: this._avatarSize},
+                            {avatar_size: that._avatarSize.px()},
                             this.params // params are set by internal BB code
                         )
                     )
@@ -805,6 +874,40 @@
         return this;
     }
 
+    //
+    // Compatibility layer switches.
+    //
+
+    var compat = Object.create({
+        react: {
+            v15: require('react').version >= "15",
+            v16: require('react').version >= "16"
+        },
+        helpers: {
+            avatars: AJS.version > "7.6.3"
+        },
+        icons: {
+            tag: AJS.version >= "7.5.3"
+        }
+    });
+
+    if (compat.react.v16) {
+        var React = React_16;
+    } else {
+        var React = React_15;
+    }
+
+    if (compat.helpers.avatars) {
+        var AvatarSize = AvatarSize_Native;
+    } else {
+        var AvatarSize = AvatarSize_64;
+    }
+
+    if (compat.icons.tag) {
+        var IconTag = IconTag_Native;
+    } else {
+        var IconTag = IconTag_DevTools;
+    }
 
     //
     // Global state objects.
@@ -813,12 +916,14 @@
 
     var api = Object.create({
         urls: {
+            base: AJS.contextPath() != "/" ? AJS.contextPath() : "",
+
             root: function() {
-                return baseURL + '/rest/io.reconquest.bitbucket.labels/1.0/';
+                return this.base + '/rest/io.reconquest.bitbucket.labels/1.0/';
             },
 
             list: function () {
-                return this.root() + '/list';
+                return this.root() + 'list';
             },
 
             byRepository: function(project, repo) {
@@ -924,4 +1029,4 @@
             new view(context, api).mount();
         });
     });
-}(AJS.$, AJS.contextPath() != "/" ? AJS.contextPath() : ""));
+}(AJS.$));

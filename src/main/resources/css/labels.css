@@ -20,6 +20,11 @@
     position: absolute;
 }
 
+body[data-aui-version^="5"] .rq-labels-side-panel .rq-labels-button-edit,
+body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
+    margin-top: 0px;
+}
+
 .rq-labels-side-panel .rq-labels-edit-form {
     margin-top: 15px;
     display: none;
