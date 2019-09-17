@@ -46,6 +46,9 @@ import com.atlassian.bitbucket.util.PageRequest;
 import com.atlassian.bitbucket.util.PageRequestImpl;
 import com.atlassian.plugin.spring.scanner.annotation.component.Scanned;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
+import com.atlassian.upm.api.license.PluginLicenseManager;
+import com.atlassian.upm.api.license.entity.PluginLicense;
+import com.atlassian.upm.api.util.Option;
 
 import io.reconquest.bitbucket.labels.ao.Label;
 
@@ -56,6 +59,8 @@ import net.java.ao.Query;
 @Scanned
 public class PullRequestLabels {
   @ComponentImport private final ActiveObjects ao;
+
+  @ComponentImport private final PluginLicenseManager pluginLicenseManager;
 
   private static Logger log = Logger.getLogger(PullRequestLabels.class.getSimpleName());
 
@@ -71,6 +76,7 @@ public class PullRequestLabels {
 
   @Inject
   public PullRequestLabels(
+      PluginLicenseManager pluginLicenseManager,
       ActiveObjects ao,
       RepositoryService repositoryService,
       PullRequestService pullRequestService,
@@ -79,6 +85,7 @@ public class PullRequestLabels {
       AuthenticationContext authContext) {
     log.setLevel(INFO);
 
+    this.pluginLicenseManager = pluginLicenseManager;
     this.ao = checkNotNull(ao);
     this.repositoryService = checkNotNull(repositoryService);
     this.pullRequestService = checkNotNull(pullRequestService);
@@ -94,6 +101,10 @@ public class PullRequestLabels {
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId) {
+    if (!this.isLicenseValid()) {
+      return Response.status(401).build();
+    }
+
     Project project = this.projectService.getByKey(projectSlug);
     if (project == null) {
       return Response.status(404).build();
@@ -128,6 +139,10 @@ public class PullRequestLabels {
   public Response listByRepositoryHash(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug) {
+    if (!this.isLicenseValid()) {
+      return Response.status(401).build();
+    }
+
     Project project = this.projectService.getByKey(projectSlug);
     if (project == null) {
       return Response.status(404).build();
@@ -175,6 +190,10 @@ public class PullRequestLabels {
       @QueryParam("is_reviewer") Boolean isReviewer,
       @QueryParam("start") Integer start,
       @QueryParam("limit") Integer limit) {
+    if (!this.isLicenseValid()) {
+      return Response.status(401).build();
+    }
+
     Project project = this.projectService.getByKey(projectSlug);
     if (project == null) {
       return Response.status(404).build();
@@ -339,6 +358,10 @@ public class PullRequestLabels {
   public Response listByRepository(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug) {
+    if (!this.isLicenseValid()) {
+      return Response.status(401).build();
+    }
+
     Project project = this.projectService.getByKey(projectSlug);
     if (project == null) {
       return Response.status(404).build();
@@ -363,6 +386,10 @@ public class PullRequestLabels {
   @Produces({MediaType.APPLICATION_JSON})
   @Path("/list")
   public Response list(@FormParam("repository_id") List<Integer> repositories) {
+    if (!this.isLicenseValid()) {
+      return Response.status(401).build();
+    }
+
     String[] ids = new String[repositories.size()];
     for (int i = 0; i < repositories.toArray().length; i++) {
       Integer id = repositories.get(i);
@@ -404,6 +431,10 @@ public class PullRequestLabels {
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId,
       @FormParam("name") String name) {
+    if (!this.isLicenseValid()) {
+      return Response.status(401).build();
+    }
+
     Project project = this.projectService.getByKey(projectSlug);
     if (project == null) {
       return Response.status(404).build();
@@ -458,6 +489,10 @@ public class PullRequestLabels {
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId,
       @FormParam("name") String name) {
+    if (!this.isLicenseValid()) {
+      return Response.status(401).build();
+    }
+
     Project project = this.projectService.getByKey(projectSlug);
     if (project == null) {
       return Response.status(404).build();
@@ -508,5 +543,21 @@ public class PullRequestLabels {
         set.values().toArray(new PullRequestLabelResponse[set.size()]);
 
     return response;
+  }
+
+  public boolean isLicenseDefined() {
+    Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
+    return licenseOption.isDefined();
+  }
+
+  public boolean isLicenseValid() {
+    return true;
+    // Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
+    // if (!licenseOption.isDefined()) {
+    //  return false;
+    // }
+
+    // PluginLicense pluginLicense = licenseOption.get();
+    // return pluginLicense.isValid();
   }
 }

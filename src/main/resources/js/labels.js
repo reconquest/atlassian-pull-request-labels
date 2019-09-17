@@ -97,6 +97,10 @@
         return this;
     }
 
+    var InvalidLicenseMessage =
+        'License for Labels Add-on is missing or expired. ' +
+        'Visit "Manage Apps" page in your Bitbucket instance for more info.';
+
     var ViewNotApplicable = function () {
         this.mount = function () {
             return null;
@@ -178,6 +182,14 @@
         } else {
             this._$.append('&nbsp;'); // prevent table collapse in Firefox
         }
+
+        return this._$;
+    }
+
+    var LabelsCellUnlicensed = function(labels) {
+        this._$ = $('<td class="rq-labels-table-row"/>');
+
+        this._$.append(new IconInvalidLicense());
 
         return this._$;
     }
@@ -323,6 +335,13 @@
         return Icon('devtools-tag', {classes: 'rq-labels-icon-tag'});
     }
 
+    var IconInvalidLicense = function() {
+        return Icon(
+            'warning',
+            {classes: 'rq-labels-icon-invalid-license'}
+        ).attr('title', InvalidLicenseMessage);
+    }
+
     var ButtonIconEdit = function() {
         return ButtonIcon('edit', {classes: 'rq-labels-button-edit'});
     }
@@ -356,7 +375,8 @@
         var options = Options(options, {
             query: function(term) { return [] },
             add: function(label) {},
-            remove: function(label) {}
+            remove: function(label) {},
+            licensed: true
         });
 
         this._context = context;
@@ -427,20 +447,38 @@
             }
         });
 
-        this._$ = $('<div class="rq-labels-side-panel"/>').append(
-            $('<h3/>').append(
-                this._spinner,
-                'Labels',
+        this._header = $('<h3/>').append(
+            this._spinner,
+            'Labels'
+        )
+
+        this._warning = null;
+        if (options.licensed) {
+            this._header.append(
                 new ButtonIconEdit().
                 click(
                     function() { this.edit() }.bind(this)
                 )
-            ),
-            this._$labels,
-            $('<form class="rq-labels-edit-form"/>').
+            )
+        } else {
+            this._header.append(new IconInvalidLicense())
+
+            this._warning = $('<i/>').text(InvalidLicenseMessage)
+        }
+
+        this._form = $('<form class="rq-labels-edit-form"/>').
             submit(function() { return false }).
             append(this._select)
+
+        this._$ = $('<div class="rq-labels-side-panel"/>').append(
+            this._header,
+            this._$labels,
+            this._form
         );
+
+        if (this._warning) {
+            this._$.append(this._warning);
+        }
 
         return $.extend(this._$, this);
     }
@@ -453,7 +491,7 @@
     //     and invokes callback while passing generated cell as an argument
 
     var LabelsCellProviderStatic = function (labels) {
-        this._cells = [];
+        this._cells = {};
 
         $.each(
             labels,
@@ -471,6 +509,18 @@
         return this;
     }
 
+    var LabelsCellProviderStaticUnlicensed = function (labels) {
+        this._cells = {};
+
+        this.provide = function (id, callback) {
+            this._cells[id] = this._cells[id] || new LabelsCellUnlicensed()
+
+            callback(this._cells[id])
+        }
+
+        return this;
+    }
+
     var LabelsCellProviderDynamic = function (selector) {
         // Main idea of Dynamic Provider is to collect all PR/Repository ID on
         // the page, retrieve data from backend for given repos, store it in
@@ -481,48 +531,73 @@
         this._repositories = {};
         this._pullRequests = {};
 
-        this._cells = [];
+        this._cells = {};
 
         this._updating = false;
+        this._licensed = true;
         this._callbacks = [];
 
-        this._parseRepositoriesID = function () {
+        this._findIdentifiers = function () {
             $(selector).find('td div.title a').each(function(_, item) {
                 this._pullRequests[$(item).data('pull-request-id')] = 1;
                 this._repositories[$(item).data('repository-id')] = 1;
             }.bind(this))
         }
 
+        this._invokeCallbacks = function () {
+            $.each(this._callbacks, function(_, callback) {
+                callback()
+            })
+
+            this._callbacks.length = 0;
+        }
+
         this._updateLabels = function () {
             this._updating = true;
 
-            this._parseRepositoriesID();
+            this._findIdentifiers();
 
             $.when(
                 api.getByRepositoryIDs(Object.keys(this._repositories))
-            ).done(function (response) {
+            )
+            .done(function (response) {
                 $.each(
                     response.labels,
                     function (pr, labels) {
-                        this._cells[pr] = this._cells[pr] ||
-                            new LabelsCell(labels);
+                        if (!this._cells[pr]) {
+                            this._cells[pr] = this._newLabelCell(labels);
+                        }
                     }.bind(this)
                 );
 
-                $.each(this._callbacks, function(_, callback) {
-                    callback()
-                })
-                this._callbacks.length = 0;
-
+                this._invokeCallbacks();
                 this._updating = false;
-            }.bind(this));
+            }.bind(this))
+            .fail(function (e) {
+                if (e.status == 401) {
+                    this._licensed = false;
+
+                    this._invokeCallbacks();
+                } else {
+                    throw e;
+                }
+            }.bind(this))
+        }
+
+        this._newLabelCell = function (labels) {
+            if (this._licensed) {
+                return new LabelsCell(labels);
+            } else {
+                return new LabelsCellUnlicensed(labels);
+            }
         }
 
         this._callback = function(id, fn) {
-            return fn(this._cells[id] = this._cells[id] || new LabelsCell())
+            return fn(this._cells[id] = this._cells[id] || this._newLabelCell())
         }
 
         this.provide = function (id, callback) {
+            console.log("callback", callback)
             if (this._updating || !this._pullRequests[id]) {
                 this._callbacks.push(this._callback.bind(this, id, callback))
 
@@ -537,6 +612,7 @@
 
         return this;
     }
+
 
     //
     // Plugin-specific components which work with BB internal React state.
@@ -681,6 +757,7 @@
         this.mount = function(table) {
             this._observer.observe(table);
             this._render(table);
+
         }
 
         return this;
@@ -770,6 +847,14 @@
             this._table.content.mount(this._$)
         }
 
+        this._renderUnlicensed = function () {
+            this._table = new PullRequestTable(
+                new LabelsCellProviderStaticUnlicensed()
+            )
+
+            this._table.mount(this._$)
+        }
+
         this.mount = function() {
             $.when(
                 api.getByRepository(
@@ -780,11 +865,19 @@
                     context.getProjectKey(),
                     context.getRepositorySlug()
                 )
-            ).done(function (getByRepositoryXHR, getByPullRequestListXHR) {
+            )
+            .done(function (getByRepositoryXHR, getByPullRequestListXHR) {
                 this._render(
                     getByRepositoryXHR[0].labels,
                     getByPullRequestListXHR[0].labels
                 );
+            }.bind(this))
+            .fail(function (e) {
+                if (e.status == 401) {
+                    this._renderUnlicensed();
+                } else {
+                    throw e;
+                }
             }.bind(this));
 
             return this;
@@ -799,27 +892,33 @@
             return new ViewNotApplicable();
         }
 
-        this._panel = new LabelsPanel({
-            query: function (_) {
-                return this._labels;
-            }.bind(this),
+        this._initPanel = function (licensed) {
+            this._panel = new LabelsPanel({
+                licensed: licensed,
 
-            add: api.addLabel.bind(
-                api,
-                context.getProjectKey(),
-                context.getRepositorySlug(),
-                context.getPullRequestID()
-            ),
+                query: function (_) {
+                    return this._labels;
+                }.bind(this),
 
-            remove: api.removeLabel.bind(
-                api,
-                context.getProjectKey(),
-                context.getRepositorySlug(),
-                context.getPullRequestID()
-            )
-        });
+                add: api.addLabel.bind(
+                    api,
+                    context.getProjectKey(),
+                    context.getRepositorySlug(),
+                    context.getPullRequestID()
+                ),
+
+                remove: api.removeLabel.bind(
+                    api,
+                    context.getProjectKey(),
+                    context.getRepositorySlug(),
+                    context.getPullRequestID()
+                )
+            });
+        }
 
         this._render = function(labels, mapping) {
+            this._initPanel(true);
+
             this._labels = labels;
 
             $.each(
@@ -829,6 +928,11 @@
                 }.bind(this)
             );
 
+            this._$.append(this._panel);
+        }
+
+        this._renderUnlicensed = function() {
+            this._initPanel(false);
             this._$.append(this._panel);
         }
 
@@ -843,11 +947,19 @@
                     context.getRepositorySlug(),
                     context.getPullRequestID()
                 )
-            ).done(function (getByRepositoryXHR, getByPullRequestXHR) {
+            )
+            .done(function (getByRepositoryXHR, getByPullRequestXHR) {
                 this._render(
                     getByRepositoryXHR[0].labels,
                     getByPullRequestXHR[0].labels
                 );
+            }.bind(this))
+            .fail(function (e) {
+                if (e.status == 401) {
+                    this._renderUnlicensed();
+                } else {
+                    throw e;
+                }
             }.bind(this));
 
             return this;

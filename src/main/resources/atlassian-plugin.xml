@@ -5,6 +5,7 @@
         <vendor name="${project.organization.name}" url="${project.organization.url}" />
         <param name="plugin-icon">images/plugin-icon.png</param>
         <param name="plugin-logo">images/plugin-logo.png</param>
+        <param name="atlassian-licensing-enabled">true</param>
         <!--<param name="atlassian-data-center-status">compatible</param>-->
         <!--<param name="atlassian-data-center-compatible">true</param>-->
     </plugin-info>
@@ -36,13 +37,14 @@
     </web-resource>
 
 
-  <rest name="Pull Request Labels" key="pull-request-labels" path="io.reconquest.bitbucket.labels" version="1.0">
-    <description>The Pull Request Labels Plugin</description>
-  </rest>
+    <rest name="Pull Request Labels" key="pull-request-labels" path="io.reconquest.bitbucket.labels" version="1.0">
+        <description>The Pull Request Labels Plugin</description>
+    </rest>
 
-  <ao key="ao-module">
-      <description>The module configuring the Active Objects service used by this plugin</description>
-      <entity>io.reconquest.bitbucket.labels.ao.Label</entity>
-  </ao>
+    <ao key="ao-module">
+        <description>The module configuring the Active Objects service used by this plugin</description>
+        <entity>io.reconquest.bitbucket.labels.ao.Label</entity>
+    </ao>
 
+    <!--<component-import key="pluginLicenseManager" interface="com.atlassian.upm.api.license.PluginLicenseManager" />-->
 </atlassian-plugin>

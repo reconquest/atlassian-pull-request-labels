@@ -63,6 +63,10 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
     margin-right: 5px;
 }
 
+.rq-labels-icon-invalid-license {
+    margin-left: 5px;
+}
+
 .aui-dropdown2.aui-style-default.rq-labels-select {
     padding: 0;
 }
