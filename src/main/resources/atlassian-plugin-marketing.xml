@@ -4,10 +4,9 @@
         <product name="bitbucket" min="5.0" max="6.6.1"/>
     </compatibility>
     <logo image="images/plugin.logo.144x144.png"/>
-    <banner image="images/02_banner.jpg"/>
     <highlights>
-        <highlight image="images/03_highlight1_ss.jpg" cropped="images/04_highlight1_cropped.jpg"/>
-        <highlight image="images/05_highlight2_ss.jpg" cropped="images/06_highlight2_cropped.jpg"/>
-        <highlight image="images/07_highlight3_ss.jpg" cropped="images/08_highlight3_cropped.jpg"/>
+        <highlight image="images/highlights-1.png" cropped="images/highlights-1.thumb.png"/>
+        <highlight image="images/highlights-2.png" cropped="images/highlights-2.thumb.png"/>
+        <highlight image="images/highlights-3.png" cropped="images/highlights-3.thumb.png"/>
     </highlights>
 </atlassian-plugin-marketing>
