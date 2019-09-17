@@ -3,8 +3,10 @@
         <description>${project.description}</description>
         <version>${project.version}</version>
         <vendor name="${project.organization.name}" url="${project.organization.url}" />
-        <param name="plugin-icon">images/plugin-icon.png</param>
-        <param name="plugin-logo">images/plugin-logo.png</param>
+        <param name="plugin-icon">images/plugin.logo.16x16.png</param>
+        <param name="plugin-logo">images/plugin.logo.144x144.png</param>
+        <param name="vendor-icon">images/vendor.logo.16x16.png</param>
+        <param name="vendor-logo">images/vendor.logo.72x72.png</param>
         <param name="atlassian-licensing-enabled">true</param>
         <!--<param name="atlassian-data-center-status">compatible</param>-->
         <!--<param name="atlassian-data-center-compatible">true</param>-->
@@ -23,10 +25,10 @@
             <transformer key="jsI18n"/>
         </transformation>
 
-        <!--<resource name="labels.js" type="download" location="js/labels.js"/>-->
+        <resource name="labels.js" type="download" location="js/labels.js"/>
 
         <!-- UNCOMMENT TO USE JS LOADER FOR SCRIPT TO QUICKEN DEVELOPMENT -->
-        <resource name="labels-loader.js" type="download" location="js/labels-loader.js"/>
+        <!--<resource name="labels-loader.js" type="download" location="js/labels-loader.js"/>-->
 
         <resource name="labels.css" type="download" location="css/labels.css"/>
         <resource name="labels.soy.js" type="download" location="/soy/labels.soy"/>

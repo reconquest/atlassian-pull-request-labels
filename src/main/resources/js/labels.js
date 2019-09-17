@@ -225,7 +225,7 @@
             placeholder: options.placeholder,
             allowClear: true,
             query: function (args) {
-                data = $.grep(options.query(args.term), function (item) {
+                var data = $.grep(options.query(args.term), function (item) {
                     return item.name.startsWith(args.term)
                 });
 
