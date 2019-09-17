@@ -46,5 +46,5 @@
         <entity>io.reconquest.bitbucket.labels.ao.Label</entity>
     </ao>
 
-    <!--<component-import key="pluginLicenseManager" interface="com.atlassian.upm.api.license.PluginLicenseManager" />-->
+    <component-import key="pluginLicenseManager" interface="com.atlassian.upm.api.license.PluginLicenseManager" />
 </atlassian-plugin>
