@@ -8,8 +8,8 @@
     <organization>
         <name>reconquest</name>
     </organization>
-    <name>Pull Request Labels</name>
-    <description>Plugin adds ability to put labels on Pull Requests.</description>
+    <name>Pull Request Labels by Reconquest</name>
+    <description>Plugin adds ability to assign labels on Pull Requests.</description>
     <packaging>atlassian-plugin</packaging>
     <dependencyManagement>
         <dependencies>
