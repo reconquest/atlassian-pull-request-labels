@@ -546,11 +546,13 @@ public class PullRequestLabels {
   }
 
   public boolean isLicenseDefined() {
+    // return true;
     Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
     return licenseOption.isDefined();
   }
 
   public boolean isLicenseValid() {
+    // return true;
     Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
     if (!licenseOption.isDefined()) {
       return false;

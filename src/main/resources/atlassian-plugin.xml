@@ -45,6 +45,4 @@
         <description>The module configuring the Active Objects service used by this plugin</description>
         <entity>io.reconquest.bitbucket.labels.ao.Label</entity>
     </ao>
-
-    <component-import key="pluginLicenseManager" interface="com.atlassian.upm.api.license.PluginLicenseManager" />
 </atlassian-plugin>
