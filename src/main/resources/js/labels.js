@@ -379,8 +379,6 @@
             licensed: true
         });
 
-        this._context = context;
-        this._api = api;
         this._labels = {};
 
         this._query = function (term) {
@@ -521,7 +519,7 @@
         return this;
     }
 
-    var LabelsCellProviderDynamic = function (selector) {
+    var LabelsCellProviderDynamic = function (selector, api) {
         // Main idea of Dynamic Provider is to collect all PR/Repository ID on
         // the page, retrieve data from backend for given repos, store it in
         // memory and use for all PRs
@@ -597,7 +595,6 @@
         }
 
         this.provide = function (id, callback) {
-            console.log("callback", callback)
             if (this._updating || !this._pullRequests[id]) {
                 this._callbacks.push(this._callback.bind(this, id, callback))
 
@@ -974,7 +971,7 @@
             return new ViewNotApplicable();
         }
 
-        this._provider = new LabelsCellProviderDynamic(this._$);
+        this._provider = new LabelsCellProviderDynamic(this._$, api);
 
         this.mount = function() {
             this._$.each(function(_, container) {
@@ -987,51 +984,14 @@
     }
 
     //
-    // Compatibility layer switches.
-    //
-
-    var compat = Object.create({
-        react: {
-            v15: require('react').version >= "15",
-            v16: require('react').version >= "16"
-        },
-        helpers: {
-            avatars: AJS.version > "7.6.3"
-        },
-        icons: {
-            tag: AJS.version >= "7.5.3"
-        }
-    });
-
-    if (compat.react.v16) {
-        var React = React_16;
-    } else {
-        var React = React_15;
-    }
-
-    if (compat.helpers.avatars) {
-        var AvatarSize = AvatarSize_Native;
-    } else {
-        var AvatarSize = AvatarSize_64;
-    }
-
-    if (compat.icons.tag) {
-        var IconTag = IconTag_Native;
-    } else {
-        var IconTag = IconTag_DevTools;
-    }
-
-    //
     // Global state objects.
     // These objects are read-only and provide current context only.
     //
 
-    var api = Object.create({
-        urls: {
-            base: AJS.contextPath() != "/" ? AJS.contextPath() : "",
-
+    var API = function (baseURL) {
+        this.urls = Object.create({
             root: function() {
-                return this.base + '/rest/io.reconquest.bitbucket.labels/1.0/';
+                return baseURL + '/rest/io.reconquest.bitbucket.labels/1.0/';
             },
 
             list: function () {
@@ -1054,9 +1014,9 @@
                 return this.byPullRequestList(project, repo) + ':search' +
                     '?' + Query(filter);
             },
-        },
+        });
 
-        getByRepositoryIDs: function(repos) {
+        this.getByRepositoryIDs = function(repos) {
             return $.ajax(
                 this.urls.list(),
                 {
@@ -1067,21 +1027,21 @@
                     }
                 }
             );
-        },
+        }
 
-        getByRepository: function(project, repo) {
+        this.getByRepository = function(project, repo) {
             return $.get(this.urls.byRepository(project, repo));
-        },
+        }
 
-        getByPullRequest: function(project, repo, pr) {
+        this.getByPullRequest = function(project, repo, pr) {
             return $.get(this.urls.byPullRequest(project, repo, pr));
-        },
+        }
 
-        getByPullRequestList: function(project, repo) {
+        this.getByPullRequestList = function(project, repo) {
             return $.get(this.urls.byPullRequestList(project, repo));
-        },
+        }
 
-        addLabel: function(project, repo, pr, label) {
+        this.addLabel = function(project, repo, pr, label) {
             return $.ajax(
                 this.urls.byPullRequest(project, repo, pr),
                 {
@@ -1092,9 +1052,9 @@
                     }
                 }
             );
-        },
+        }
 
-        removeLabel: function(project, repo, pr, label) {
+        this.removeLabel = function(project, repo, pr, label) {
             return $.ajax(
                 this.urls.byPullRequest(project, repo, pr),
                 {
@@ -1105,30 +1065,67 @@
                     }
                 }
             );
-        },
-    });
+        }
+    }
 
-    var context = Object.create({
-        state: require('bitbucket/util/state'),
+    var Context = function () {
+        this.state = require('bitbucket/util/state')
 
-        getProjectKey: function() {
+        this.getProjectKey = function() {
             return this.state.getProject().key
-        },
+        }
 
-        getRepositorySlug: function() {
+        this.getRepositorySlug = function() {
             return this.state.getRepository().slug
-        },
+        }
 
-        getPullRequestID: function() {
+        this.getPullRequestID = function() {
             return this.state.getPullRequest().id
         }
-    });
 
-    var views = [
-        ViewPullRequestDetails,
-        ViewPullRequestListWithFilter,
-        ViewDashboard
-    ];
+        return this;
+    }
+
+    var Compat = function () {
+        this.react = {
+            v15: require('react').version >= "15",
+            v16: require('react').version >= "16"
+        }
+
+        this.helpers = {
+            avatars: AJS.version > "7.6.3"
+        }
+
+        this.icons = {
+            tag: AJS.version >= "7.5.3"
+        }
+
+        return this;
+    }
+
+    //
+    // Compatibility layer switches.
+    //
+
+    var React = React_16;
+    var AvatarSize = AvatarSize_Native;
+    var IconTag = IconTag_Native;
+
+    $(document).ready(function () {
+        var compat = new Compat();
+
+        if (!compat.react.v16) {
+            React = React_15;
+        }
+
+        if (!compat.helpers.avatars) {
+            AvatarSize = AvatarSize_64;
+        }
+
+        if (!compat.icons.tag) {
+            IconTag = IconTag_DevTools;
+        }
+    });
 
     //
     // Entry point.
@@ -1136,7 +1133,19 @@
     // Views components are aware when they should be mounted.
     //
 
+    var views = [
+        ViewPullRequestDetails,
+        ViewPullRequestListWithFilter,
+        ViewDashboard
+    ];
+
     $(document).ready(function () {
+        var context = new Context();
+
+        var api = new API(
+            AJS.contextPath() != "/"? AJS.contextPath() : ""
+        );
+
         $.each(views, function (_, view) {
             new view(context, api).mount();
         });
