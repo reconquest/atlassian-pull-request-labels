@@ -30,6 +30,10 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
     display: none;
 }
 
+.rq-labels-side-panel .rq-labels-messages {
+    margin-top: 20px;
+}
+
 .rq-labels-side-panel .rq-spinner {
     position: absolute;
     margin-left: -30px;
@@ -39,6 +43,7 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
     display: none;
 }
 
+.rq-labels-side-panel.rq-editable .rq-labels-messages .rq-label,
 .aui-label.aui-label-closeable.rq-label {
     padding-right: 5px;
 }
@@ -48,6 +53,7 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
 }
 
 .rq-labels-side-panel.rq-editable .aui-label.aui-label-closeable.rq-label .aui-icon-close {
+    outline: none;
     display: inline;
 }
 

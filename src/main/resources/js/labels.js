@@ -204,6 +204,32 @@
             hide();
     }
 
+    var Message = function (severity, content, options) {
+        var options = Options(options, {
+            fade: Options(options && options.fade || {}, {
+                delay: 2000,
+                duration: 2000
+            })
+        });
+
+        this._$ = $(aui.message[severity]({
+            content: content || ""
+        })).hide();
+
+        return $.extend(this._$, {
+            fadeout: function () {
+                this.
+                    delay(options.fade.delay).
+                    fadeOut(options.fade.duration);
+                return this;
+            }
+        });
+    }
+
+    var MessageError = function (content) {
+        return new Message('error', content);
+    }
+
     var Select = function (options) {
         var __noop__ = function() {}
 
@@ -296,6 +322,14 @@
 
             change: function(fn) {
                 this.children().on('change', fn);
+            },
+
+            close: function() {
+                this.children().select2('close');
+            },
+
+            itemize: function(item) {
+                return options.itemize(item);
             }
         });
     }
@@ -349,6 +383,10 @@
     var SelectLabel = function(options) {
         return new Select(Options(options, {
             itemize: function(item) {
+                if (item == null) {
+                    return null;
+                }
+
                 return $('<span/>').append(
                     new IconTag(),
                     new Label(item.name),
@@ -394,14 +432,40 @@
             }.bind(this));
         }
 
-        this.create = function (label) {
+        this.create = function (candidate) {
+            var exists = false;
+            $.each(this._labels, function (_, label) {
+                if (label.name == candidate.name) {
+                    exists = true;
+                }
+            }.bind(this))
+
+            if (exists) {
+                this._select.close();
+                this._select.empty();
+
+                var $label = this._select.itemize({
+                    name: candidate.name
+                });
+
+                var $content = $('<span/>').
+                    append($label).
+                    append("already set.");
+
+                this._$messages.exist.
+                    html($content).
+                    show().
+                    fadeout();
+                return;
+            }
+
             this._select.disable();
             this._spinner.show();
 
             $.when(
-                options.add(label)
+                options.add(candidate)
             ).done(function () {
-                this.label(label);
+                this.label(candidate);
                 this._spinner.hide();
                 this._select.empty()
                 this._select.enable();
@@ -459,19 +523,25 @@
                 )
             )
         } else {
-            this._header.append(new IconInvalidLicense())
+            this._header.append(new IconInvalidLicense());
 
-            this._warning = $('<i/>').text(InvalidLicenseMessage)
+            this._warning = $('<i/>').text(InvalidLicenseMessage);
         }
 
-        this._form = $('<form class="rq-labels-edit-form"/>').
+        this._$form = $('<form class="rq-labels-edit-form"/>').
             submit(function() { return false }).
-            append(this._select)
+            append(this._select);
+
+        this._$messages = $('<div class="rq-labels-messages"/>')
+
+        this._$messages.exist = new MessageError()
+        this._$messages.append(this._$messages.exist);
 
         this._$ = $('<div class="rq-labels-side-panel"/>').append(
             this._header,
             this._$labels,
-            this._form
+            this._$form,
+            this._$messages
         );
 
         if (this._warning) {
