@@ -251,13 +251,20 @@
             placeholder: options.placeholder,
             allowClear: true,
             query: function (args) {
-                var data = $.grep(options.query(args.term), function (item) {
-                    return item.name.startsWith(args.term)
-                });
+                var data = [];
+
+                $.each(
+                    options.query(args.term.trim()),
+                    function(_, item) {
+                        data.push({
+                            id: item.id,
+                            name: item.name
+                        });
+                    });
 
                 return args.callback({
                     results: data
-                })
+                });
             },
             formatResult: options.itemize,
             formatSelection: options.itemize,
@@ -269,10 +276,13 @@
 
         if ($.isFunction(options.on.create) && options.on.create != __noop__) {
             config.formatSelection = function(item) {
+                item.name = item.name.trim();
                 return options.itemize(options.on.create(item))
             }
 
             config.createSearchChoice = function (term, data) {
+                var term = term.trim();
+
                 if (data.length > 0) {
                     return null;
                 }
@@ -420,7 +430,9 @@
         this._labels = {};
 
         this._query = function (term) {
-            return options.query(term);
+            return $.grep(options.query(term), function (item) {
+                return item.name.startsWith(term)
+            })
         }
 
         this.create = function (candidate) {
@@ -447,6 +459,7 @@
                     html($content).
                     show().
                     fadeout();
+
                 return;
             }
 
@@ -462,7 +475,7 @@
                 this._select.enable();
             }.bind(this));
 
-            return label;
+            return candidate;
         }
 
         this.edit = function() {
@@ -958,19 +971,34 @@
                     return this._labels;
                 }.bind(this),
 
-                add: api.addLabel.bind(
-                    api,
-                    context.getProjectKey(),
-                    context.getRepositorySlug(),
-                    context.getPullRequestID()
-                ),
+                add: function(candidate) {
+                    var found = false;
+                    $.each(this._labels, function (_, label) {
+                        if (label.name == candidate.name) {
+                            found = true;
+                        }
+                    })
 
-                remove: api.removeLabel.bind(
-                    api,
-                    context.getProjectKey(),
-                    context.getRepositorySlug(),
-                    context.getPullRequestID()
-                )
+                    if (!found) {
+                        this._labels.push(candidate);
+                    }
+
+                    return api.addLabel(
+                        context.getProjectKey(),
+                        context.getRepositorySlug(),
+                        context.getPullRequestID(),
+                        candidate
+                    );
+                }.bind(this),
+
+                remove: function(label) {
+                    return api.removeLabel(
+                        context.getProjectKey(),
+                        context.getRepositorySlug(),
+                        context.getPullRequestID(),
+                        label
+                    );
+                }.bind(this)
             });
         }
 
