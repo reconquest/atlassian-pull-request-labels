@@ -235,8 +235,8 @@
 
         var options = Options(options, {
             placeholder: '...',
-            query: function(term) { return [] },
-            itemize: function(term) { return term },
+            query: function(_) { return [] },
+            itemize: function(_) { return term },
             empty: '<empty>',
             css: Options(options.css, {
                 dropdown: '',
@@ -411,25 +411,16 @@
 
     var LabelsPanel = function (options) {
         var options = Options(options, {
-            query: function(term) { return [] },
-            add: function(label) {},
-            remove: function(label) {},
+            query: function(_) { return [] },
+            add: function(_) {},
+            remove: function(_) {},
             licensed: true
         });
 
         this._labels = {};
 
         this._query = function (term) {
-            return options.query(term).filter(function (candidate) {
-                var accept = true;
-                $.each(this._labels, function (_, label) {
-                    if (label.name == candidate.name) {
-                        accept = false;
-                    }
-                }.bind(this))
-
-                return accept;
-            }.bind(this));
+            return options.query(term);
         }
 
         this.create = function (candidate) {

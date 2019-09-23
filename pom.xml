@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.reconquest.bitbucket</groupId>
     <artifactId>labels</artifactId>
-    <version>4.0.0-5</version>
+    <version>4.0.0-6</version>
     <organization>
         <name>reconquest</name>
     </organization>

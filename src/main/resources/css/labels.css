@@ -77,6 +77,10 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
     padding: 0;
 }
 
+.rq-labels-select .rq-label {
+    display: inline;
+}
+
 .rq-labels-select .select2-search {
     background-color: #f4f5f7;
     border-bottom: 1px solid #dfe1e6;
