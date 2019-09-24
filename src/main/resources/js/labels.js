@@ -255,16 +255,42 @@
 
                 var term = args.term.trim();
 
-                $.each(
-                    $.grep(options.query(term), function (item) {
-                        return item.name.startsWith(term)
-                    }),
-                    function(_, item) {
-                        data.push({
-                            id: item.id,
-                            name: item.name
-                        });
+                var source = options.query();
+                var hit = null;
+                var matches = $.grep(source, function (item) {
+                    if (item.name == term) {
+                        hit = item;
+                    }
+
+                    return item.name.startsWith(term)
+                })
+
+                // push hit first
+                if (hit) {
+                    data.push({
+                        id: hit.id,
+                        name: hit.name,
+                    })
+                }
+
+                $.each(matches, function(_, item) {
+                    if (hit && hit.id == item.id) {
+                        return;
+                    }
+
+                    data.push({
+                        id: item.id,
+                        name: item.name
                     });
+                });
+
+                if (!hit && term != "") {
+                    data.push({
+                        id: '',
+                        name: term,
+                        newly: true
+                    });
+                }
 
                 return args.callback({
                     results: data
