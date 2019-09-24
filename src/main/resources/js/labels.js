@@ -253,8 +253,12 @@
             query: function (args) {
                 var data = [];
 
+                var term = args.term.trim();
+
                 $.each(
-                    options.query(args.term.trim()),
+                    $.grep(options.query(term), function (item) {
+                        return item.name.startsWith(term)
+                    }),
                     function(_, item) {
                         data.push({
                             id: item.id,
@@ -430,9 +434,7 @@
         this._labels = {};
 
         this._query = function (term) {
-            return $.grep(options.query(term), function (item) {
-                return item.name.startsWith(term)
-            })
+            return options.query(term)
         }
 
         this.create = function (candidate) {
