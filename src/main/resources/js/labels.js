@@ -234,6 +234,7 @@
         var __noop__ = function() {}
 
         var options = Options(options, {
+            allowNew: false,
             placeholder: '...',
             query: function(_) { return [] },
             itemize: function(_) { return term },
@@ -284,12 +285,14 @@
                     });
                 });
 
-                if (!hit && term != "") {
-                    data.push({
-                        id: '',
-                        name: term,
-                        newly: true
-                    });
+                if (options.allowNew) {
+                    if (!hit && term != "") {
+                        data.push({
+                            id: '',
+                            name: term,
+                            newly: true
+                        });
+                    }
                 }
 
                 return args.callback({
@@ -451,6 +454,7 @@
 
     var LabelsPanel = function (options) {
         var options = Options(options, {
+            allowNew: false,
             query: function(_) { return [] },
             add: function(_) {},
             remove: function(_) {},
@@ -533,6 +537,7 @@
         this._spinner = new Spinner();
         this._$labels = $('<div class="rq-labels-list"/>');
         this._select  = new SelectLabel({
+            allowNew: options.allowNew,
             empty: 'Enter New Label',
             placeholder: 'Add Label',
             query: this._query.bind(this),
@@ -993,6 +998,7 @@
 
         this._initPanel = function (licensed) {
             this._panel = new LabelsPanel({
+                allowNew: true,
                 licensed: licensed,
 
                 query: function (_) {
