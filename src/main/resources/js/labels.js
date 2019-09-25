@@ -517,7 +517,7 @@
         this.label = function (label) {
             var panel = this;
 
-            this._labels[label.id] = label;
+            this._labels[label.id ? label.id : label.name] = label;
 
             this._$labels.append(
                 new Label(label.name, function() {
