@@ -236,6 +236,8 @@ public class PullRequestLabels {
 
     PullRequestSearchRequest.Builder builder = new PullRequestSearchRequest.Builder();
 
+    builder.toRepositoryId(repository.getId());
+
     if (state != null) {
       switch (state.toUpperCase()) {
         case "OPEN":
