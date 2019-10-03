@@ -527,7 +527,7 @@
                         options.remove(label)
                     ).done(function () {
                         this.remove();
-                        delete panel._labels[label.id];
+                        delete panel._labels[label.id ? label.id : label.name];
                         panel._spinner.hide();
                     }.bind(this));
                 })
