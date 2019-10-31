@@ -1,6 +1,6 @@
 package io.reconquest.bitbucket.labels.rest;
 
-import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.XmlElement;
 
 public class PullRequestLabelResponse {
   @XmlElement(name = "id")
@@ -14,7 +14,7 @@ public class PullRequestLabelResponse {
 
   public PullRequestLabelResponse() {}
 
-  public PullRequestLabelResponse(Integer id, String name, String color color) {
+  public PullRequestLabelResponse(Integer id, String name, String color) {
     this.id = id;
     this.name = name;
     this.color = color;
