@@ -1,7 +1,6 @@
 package io.reconquest.bitbucket.labels.rest;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
 import static java.util.logging.Level.INFO;
 
 import java.util.ArrayList;
@@ -51,7 +50,6 @@ import com.atlassian.upm.api.license.entity.PluginLicense;
 import com.atlassian.upm.api.util.Option;
 
 import io.reconquest.bitbucket.labels.ao.Label;
-
 import net.java.ao.DBParam;
 import net.java.ao.Query;
 
@@ -170,7 +168,8 @@ public class PullRequestLabels {
         map.put(label.getPullRequestId(), pullRequestLabels);
       }
 
-      pullRequestLabels.add(new PullRequestLabelResponse(label.getID(), label.getName()));
+      pullRequestLabels.add(
+          new PullRequestLabelResponse(label.getID(), label.getName(), label.getColor()));
     }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
@@ -418,7 +417,8 @@ public class PullRequestLabels {
         map.put(label.getPullRequestId(), pullRequestLabels);
       }
 
-      pullRequestLabels.add(new PullRequestLabelResponse(label.getID(), label.getName()));
+      pullRequestLabels.add(
+          new PullRequestLabelResponse(label.getID(), label.getName(), label.getColor()));
     }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
@@ -432,7 +432,8 @@ public class PullRequestLabels {
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId,
-      @FormParam("name") String name) {
+      @FormParam("name") String name,
+      @FormParam("color") String color) {
     if (!this.isLicenseValid()) {
       return Response.status(401).build();
     }
@@ -452,6 +453,10 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
+    // here we ignore color because it doesn't really matter in terms of
+    // duplicates
+    //
+    // we also need to ignore them in order to save back compatibility
     final int found =
         this.ao.count(
             Label.class,
@@ -475,7 +480,8 @@ public class PullRequestLabels {
         new DBParam("PROJECT_ID", project.getId()),
         new DBParam("REPOSITORY_ID", repository.getId()),
         new DBParam("PULL_REQUEST_ID", pullRequest.getId()),
-        new DBParam("NAME", name));
+        new DBParam("NAME", name),
+        new DBParam("COLOR", color));
 
     this.ao.flush();
 
@@ -538,7 +544,8 @@ public class PullRequestLabels {
     for (int i = 0; i < labels.length; i++) {
       set.put(
           labels[i].getName(),
-          new PullRequestLabelResponse(labels[i].getID(), labels[i].getName()));
+          new PullRequestLabelResponse(
+              labels[i].getID(), labels[i].getName(), labels[i].getColor()));
     }
 
     PullRequestLabelResponse[] response =

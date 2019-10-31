@@ -9,11 +9,15 @@ public class PullRequestLabelResponse {
   @XmlElement(name = "name")
   private String name;
 
+  @XmlElement(name = "color")
+  private String color;
+
   public PullRequestLabelResponse() {}
 
-  public PullRequestLabelResponse(Integer id, String name) {
+  public PullRequestLabelResponse(Integer id, String name, String color color) {
     this.id = id;
     this.name = name;
+    this.color = color;
   }
 
   public Integer getID() {

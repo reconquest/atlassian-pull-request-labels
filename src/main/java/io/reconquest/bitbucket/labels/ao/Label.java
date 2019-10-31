@@ -16,6 +16,12 @@ public interface Label extends Entity {
   void setName(String name);
 
   @NotNull
+  String getColor();
+
+  @StringLength(16)
+  void setColor(String color);
+
+  @NotNull
   int getProjectId();
 
   void setProjectId(int projectid);
