@@ -377,12 +377,30 @@
         });
     }
 
+    var Popup = function (options) {
+        var options = Options(options, {
+        });
+
+        this._$ = $('<aui-inline-dialog>');
+
+        return $.extend(this._$, {
+        });
+    }
+
     //
     // Plugin-specific UI elements.
     //
     // These components typically extend UI elements from the library and set
     // plugin specific properties.
     //
+
+    var LabelColorPicker = function (options) {
+        var popup = Popup();
+
+        popup.html('123');
+
+        return popup;
+    }
 
     var AvatarSize_Native = function (size) {
         this.px = function() {
@@ -970,12 +988,14 @@
                     context.getRepositorySlug()
                 )
             )
-            .done(function (getByRepositoryXHR, getByPullRequestListXHR) {
-                this._render(
-                    getByRepositoryXHR[0].labels,
-                    getByPullRequestListXHR[0].labels
-                );
-            }.bind(this))
+            .done(
+                function (getByRepositoryXHR, getByPullRequestListXHR) {
+                    this._render(
+                        getByRepositoryXHR[0].labels,
+                        getByPullRequestListXHR[0].labels
+                    );
+                }.bind(this)
+            )
             .fail(function (e) {
                 if (e.status == 401) {
                     this._renderUnlicensed();
@@ -1165,6 +1185,8 @@
         }
 
         this.addLabel = function(project, repo, pr, label) {
+            // XXX
+            return;
             return $.ajax(
                 this.urls.byPullRequest(project, repo, pr),
                 {
