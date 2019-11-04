@@ -120,15 +120,12 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final PullRequestLabel[] labels =
-        this.ao.find(
-            PullRequestLabel.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ?",
-                    project.getId(),
-                    repository.getId(),
-                    pullRequest.getId()));
+    final PullRequestLabel[] labels = this.ao.find(PullRequestLabel.class, Query.select()
+        .where(
+            "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ?",
+            project.getId(),
+            repository.getId(),
+            pullRequest.getId()));
 
     return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(labels))).build();
   }
@@ -153,12 +150,8 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final PullRequestLabel[] labels =
-        this.ao.find(
-            PullRequestLabel.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
+    final PullRequestLabel[] labels = this.ao.find(PullRequestLabel.class, Query.select()
+        .where("PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
@@ -171,7 +164,7 @@ public class PullRequestLabels {
       }
 
       pullRequestLabels.add(
-          new PullRequestLabelResponse(label.getID(), label.getName(), label.getColor()));
+          new PullRequestLabelResponse(label.getID(), label.getName(), "#0000ff"));
     }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
@@ -214,15 +207,12 @@ public class PullRequestLabels {
     }
 
     // TODO: support search by multiple labels
-    final PullRequestLabel[] labels =
-        this.ao.find(
-            PullRequestLabel.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? AND REPOSITORY_ID = ? AND NAME LIKE ?",
-                    project.getId(),
-                    repository.getId(),
-                    labelName));
+    final PullRequestLabel[] labels = this.ao.find(PullRequestLabel.class, Query.select()
+        .where(
+            "PROJECT_ID = ? AND REPOSITORY_ID = ? AND NAME LIKE ?",
+            project.getId(),
+            repository.getId(),
+            labelName));
 
     HashMap<Long, HashSet<String>> map = new HashMap<Long, HashSet<String>>();
     for (PullRequestLabel label : labels) {
@@ -322,18 +312,12 @@ public class PullRequestLabels {
           RestPullRequestParticipant pullRequestAuthor =
               (RestPullRequestParticipant) restPullRequest.get(RestPullRequest.AUTHOR);
 
-          pullRequestAuthor
-              .getUser()
-              .setAvatarUrl(
-                  this.avatarService.getUrlForPerson(
-                      pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
+          pullRequestAuthor.getUser().setAvatarUrl(this.avatarService.getUrlForPerson(
+              pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
 
           for (RestPullRequestParticipant pullRequestParticipant : restPullRequest.getReviewers()) {
-            pullRequestParticipant
-                .getUser()
-                .setAvatarUrl(
-                    this.avatarService.getUrlForPerson(
-                        pullRequest.getAuthor().getUser(), new AvatarRequest(false, asdasd)));
+            pullRequestParticipant.getUser().setAvatarUrl(this.avatarService.getUrlForPerson(
+                pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
           }
 
           filteredPullRequests.add(restPullRequest);
@@ -349,9 +333,8 @@ public class PullRequestLabels {
       searchStart += limit;
     }
 
-    Page<RestPullRequest> filteredPage =
-        new PageImpl<RestPullRequest>(
-            new PageRequestImpl(start, limit), filteredPullRequests, isLastPage);
+    Page<RestPullRequest> filteredPage = new PageImpl<RestPullRequest>(
+        new PageRequestImpl(start, limit), filteredPullRequests, isLastPage);
 
     return Response.ok(new RestPage<RestPullRequest>(filteredPage)).build();
   }
@@ -376,12 +359,8 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final PullRequestLabel[] labels =
-        this.ao.find(
-            PullRequestLabel.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
+    final PullRequestLabel[] labels = this.ao.find(PullRequestLabel.class, Query.select()
+        .where("PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
 
     return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(labels))).build();
   }
@@ -407,9 +386,8 @@ public class PullRequestLabels {
 
     String query = String.join(",", ids);
 
-    final PullRequestLabel[] labels =
-        this.ao.find(
-            PullRequestLabel.class, Query.select().where("REPOSITORY_ID IN (" + query + ")"));
+    final PullRequestLabel[] labels = this.ao.find(
+        PullRequestLabel.class, Query.select().where("REPOSITORY_ID IN (" + query + ")"));
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
@@ -422,7 +400,7 @@ public class PullRequestLabels {
       }
 
       pullRequestLabels.add(
-          new PullRequestLabelResponse(label.getID(), label.getName(), label.getColor()));
+          new PullRequestLabelResponse(label.getID(), label.getName(), "#0000ff"));
     }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
@@ -461,19 +439,16 @@ public class PullRequestLabels {
     // duplicates
     //
     // we also need to ignore them in order to save back compatibility
-    final int found =
-        this.ao.count(
-            PullRequestLabel.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? "
-                        + "AND REPOSITORY_ID = ? "
-                        + "AND PULL_REQUEST_ID = ? "
-                        + "AND NAME LIKE ?",
-                    project.getId(),
-                    repository.getId(),
-                    pullRequest.getId(),
-                    name));
+    final int found = this.ao.count(PullRequestLabel.class, Query.select()
+        .where(
+            "PROJECT_ID = ? "
+                + "AND REPOSITORY_ID = ? "
+                + "AND PULL_REQUEST_ID = ? "
+                + "AND NAME LIKE ?",
+            project.getId(),
+            repository.getId(),
+            pullRequest.getId(),
+            name));
 
     if (found > 0) {
       return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
@@ -520,19 +495,16 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final PullRequestLabel[] labels =
-        this.ao.find(
-            PullRequestLabel.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? "
-                        + "AND REPOSITORY_ID = ? "
-                        + "AND PULL_REQUEST_ID = ? "
-                        + "AND NAME = ?",
-                    project.getId(),
-                    repository.getId(),
-                    pullRequest.getId(),
-                    name));
+    final PullRequestLabel[] labels = this.ao.find(PullRequestLabel.class, Query.select()
+        .where(
+            "PROJECT_ID = ? "
+                + "AND REPOSITORY_ID = ? "
+                + "AND PULL_REQUEST_ID = ? "
+                + "AND NAME = ?",
+            project.getId(),
+            repository.getId(),
+            pullRequest.getId(),
+            name));
 
     if (labels.length > 0) {
       this.ao.delete(labels);
@@ -546,10 +518,8 @@ public class PullRequestLabels {
     HashMap<String, PullRequestLabelResponse> set = new HashMap<String, PullRequestLabelResponse>();
 
     for (int i = 0; i < labels.length; i++) {
-      set.put(
-          labels[i].getName(),
-          new PullRequestLabelResponse(
-              labels[i].getID(), labels[i].getName(), labels[i].getColor()));
+      set.put(labels[i].getName(), new PullRequestLabelResponse(
+          labels[i].getID(), labels[i].getName(), "#0000ff"));
     }
 
     PullRequestLabelResponse[] response =
