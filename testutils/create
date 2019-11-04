@@ -9,11 +9,11 @@ set -euo pipefail
 
 arg_pull_requests="${1}"
 
-URI="http://admin:admin@bitbucket/bitbucket/"
+URI="http://admin:admin@bitbucket/bitbucket"
 
 bb() {
     echo ":: $ stacket ${@}" >&2
-    stacket --uri "$URI" "${@}" | sed -r 's/^/    /'
+    stacket --uri "$URI/" "${@}" | sed -r 's/^/    /'
 }
 
 name() {
