@@ -7,21 +7,19 @@ import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Table;
 
 @Preload
-@Table("PullRequestLabels")
-public interface Label extends Entity {
-  /** It exists here for back-compatibility, do not use that. */
+@Table("PullRequestLabelEntities")
+public interface LabelEntity extends Entity {
   @NotNull
-  @Deprecated
   String getName();
 
   @StringLength(250)
-  @Deprecated
   void setName(String name);
 
   @NotNull
-  String getLabelId();
+  String getColor();
 
-  void setLabelId(int labelId);
+  @StringLength(32)
+  void setColor(String color);
 
   @NotNull
   int getProjectId();
@@ -32,9 +30,4 @@ public interface Label extends Entity {
   int getRepositoryId();
 
   void setRepositoryId(int repositoryid);
-
-  @NotNull
-  Long getPullRequestId();
-
-  void setPullRequestId(Long pullrequestid);
 }

@@ -1,4 +1,4 @@
-package io.reconquest.bitbucket.labels.rest;
+package io.reconquest.bitbucket.labels.rest.response;
 
 import javax.xml.bind.annotation.XmlElement;
 

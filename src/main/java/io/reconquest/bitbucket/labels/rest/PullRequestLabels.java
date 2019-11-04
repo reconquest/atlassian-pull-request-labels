@@ -46,10 +46,12 @@ import com.atlassian.bitbucket.util.PageRequestImpl;
 import com.atlassian.plugin.spring.scanner.annotation.component.Scanned;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.upm.api.license.PluginLicenseManager;
-import com.atlassian.upm.api.license.entity.PluginLicense;
-import com.atlassian.upm.api.util.Option;
 
-import io.reconquest.bitbucket.labels.ao.Label;
+import io.reconquest.bitbucket.labels.ao.PullRequestLabel;
+import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelResponse;
+import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsListResponse;
+import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsMapResponse;
+import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsSaveResponse;
 import net.java.ao.DBParam;
 import net.java.ao.Query;
 
@@ -118,9 +120,9 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final Label[] labels =
+    final PullRequestLabel[] labels =
         this.ao.find(
-            Label.class,
+            PullRequestLabel.class,
             Query.select()
                 .where(
                     "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ?",
@@ -151,9 +153,9 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final Label[] labels =
+    final PullRequestLabel[] labels =
         this.ao.find(
-            Label.class,
+            PullRequestLabel.class,
             Query.select()
                 .where(
                     "PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
@@ -161,7 +163,7 @@ public class PullRequestLabels {
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
 
-    for (Label label : labels) {
+    for (PullRequestLabel label : labels) {
       ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(label.getPullRequestId());
       if (pullRequestLabels == null) {
         pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
@@ -212,9 +214,9 @@ public class PullRequestLabels {
     }
 
     // TODO: support search by multiple labels
-    final Label[] labels =
+    final PullRequestLabel[] labels =
         this.ao.find(
-            Label.class,
+            PullRequestLabel.class,
             Query.select()
                 .where(
                     "PROJECT_ID = ? AND REPOSITORY_ID = ? AND NAME LIKE ?",
@@ -223,7 +225,7 @@ public class PullRequestLabels {
                     labelName));
 
     HashMap<Long, HashSet<String>> map = new HashMap<Long, HashSet<String>>();
-    for (Label label : labels) {
+    for (PullRequestLabel label : labels) {
       HashSet<String> names = map.get(label.getPullRequestId());
       if (names == null) {
         names = new HashSet<String>();
@@ -331,9 +333,10 @@ public class PullRequestLabels {
                 .getUser()
                 .setAvatarUrl(
                     this.avatarService.getUrlForPerson(
-                        pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
+                        pullRequest.getAuthor().getUser(), new AvatarRequest(false, asdasd)));
           }
 
+          filteredPullRequests.add(restPullRequest);
           filteredPullRequests.add(restPullRequest);
         }
       }
@@ -373,9 +376,9 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final Label[] labels =
+    final PullRequestLabel[] labels =
         this.ao.find(
-            Label.class,
+            PullRequestLabel.class,
             Query.select()
                 .where(
                     "PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
@@ -404,13 +407,14 @@ public class PullRequestLabels {
 
     String query = String.join(",", ids);
 
-    final Label[] labels =
-        this.ao.find(Label.class, Query.select().where("REPOSITORY_ID IN (" + query + ")"));
+    final PullRequestLabel[] labels =
+        this.ao.find(
+            PullRequestLabel.class, Query.select().where("REPOSITORY_ID IN (" + query + ")"));
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
 
-    for (Label label : labels) {
+    for (PullRequestLabel label : labels) {
       ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(label.getPullRequestId());
       if (pullRequestLabels == null) {
         pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
@@ -459,7 +463,7 @@ public class PullRequestLabels {
     // we also need to ignore them in order to save back compatibility
     final int found =
         this.ao.count(
-            Label.class,
+            PullRequestLabel.class,
             Query.select()
                 .where(
                     "PROJECT_ID = ? "
@@ -476,7 +480,7 @@ public class PullRequestLabels {
     }
 
     this.ao.create(
-        Label.class,
+        PullRequestLabel.class,
         new DBParam("PROJECT_ID", project.getId()),
         new DBParam("REPOSITORY_ID", repository.getId()),
         new DBParam("PULL_REQUEST_ID", pullRequest.getId()),
@@ -516,9 +520,9 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final Label[] labels =
+    final PullRequestLabel[] labels =
         this.ao.find(
-            Label.class,
+            PullRequestLabel.class,
             Query.select()
                 .where(
                     "PROJECT_ID = ? "
@@ -538,7 +542,7 @@ public class PullRequestLabels {
     return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
   }
 
-  private PullRequestLabelResponse[] getLabelsResponse(Label[] labels) {
+  private PullRequestLabelResponse[] getLabelsResponse(PullRequestLabel[] labels) {
     HashMap<String, PullRequestLabelResponse> set = new HashMap<String, PullRequestLabelResponse>();
 
     for (int i = 0; i < labels.length; i++) {
@@ -555,19 +559,19 @@ public class PullRequestLabels {
   }
 
   public boolean isLicenseDefined() {
-    // return true;
-    Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
-    return licenseOption.isDefined();
+    return true;
+    // Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
+    // return licenseOption.isDefined();
   }
 
   public boolean isLicenseValid() {
-    // return true;
-    Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
-    if (!licenseOption.isDefined()) {
-      return false;
-    }
+    return true;
+    // Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
+    // if (!licenseOption.isDefined()) {
+    //  return false;
+    // }
 
-    PluginLicense pluginLicense = licenseOption.get();
-    return pluginLicense.isValid();
+    // PluginLicense pluginLicense = licenseOption.get();
+    // return pluginLicense.isValid();
   }
 }
