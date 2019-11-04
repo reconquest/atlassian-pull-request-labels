@@ -47,19 +47,16 @@ import com.atlassian.plugin.spring.scanner.annotation.component.Scanned;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.upm.api.license.PluginLicenseManager;
 
-import io.reconquest.bitbucket.labels.ao.PullRequestLabel;
+import io.reconquest.bitbucket.labels.Store;
+import io.reconquest.bitbucket.labels.ao.LabelLegacy;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsListResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsMapResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsSaveResponse;
-import net.java.ao.DBParam;
-import net.java.ao.Query;
 
 @Path("/")
 @Scanned
 public class PullRequestLabels {
-  @ComponentImport private final ActiveObjects ao;
-
   @ComponentImport private final PluginLicenseManager pluginLicenseManager;
 
   private static Logger log = Logger.getLogger(PullRequestLabels.class.getSimpleName());
@@ -74,24 +71,26 @@ public class PullRequestLabels {
 
   @ComponentImport private final AuthenticationContext authContext;
 
+  private final Store store;
+
   @Inject
   public PullRequestLabels(
+      @ComponentImport ActiveObjects ao,
       PluginLicenseManager pluginLicenseManager,
-      ActiveObjects ao,
       RepositoryService repositoryService,
       PullRequestService pullRequestService,
       ProjectService projectService,
       AvatarService avatarService,
       AuthenticationContext authContext) {
     log.setLevel(INFO);
-
     this.pluginLicenseManager = pluginLicenseManager;
-    this.ao = checkNotNull(ao);
     this.repositoryService = checkNotNull(repositoryService);
     this.pullRequestService = checkNotNull(pullRequestService);
     this.projectService = checkNotNull(projectService);
     this.avatarService = checkNotNull(avatarService);
     this.authContext = checkNotNull(authContext);
+
+    this.store = new Store(checkNotNull(ao));
   }
 
   @GET
@@ -120,14 +119,9 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final PullRequestLabel[] labels = this.ao.find(PullRequestLabel.class, Query.select()
-        .where(
-            "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ?",
-            project.getId(),
-            repository.getId(),
-            pullRequest.getId()));
-
-    return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(labels))).build();
+    return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(
+            store.find(project.getId(), repository.getId(), pullRequest.getId()))))
+        .build();
   }
 
   @GET
@@ -150,13 +144,12 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final PullRequestLabel[] labels = this.ao.find(PullRequestLabel.class, Query.select()
-        .where("PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
+    final LabelLegacy[] labels = store.find(project.getId(), repository.getId());
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
 
-    for (PullRequestLabel label : labels) {
+    for (LabelLegacy label : labels) {
       ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(label.getPullRequestId());
       if (pullRequestLabels == null) {
         pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
@@ -207,15 +200,10 @@ public class PullRequestLabels {
     }
 
     // TODO: support search by multiple labels
-    final PullRequestLabel[] labels = this.ao.find(PullRequestLabel.class, Query.select()
-        .where(
-            "PROJECT_ID = ? AND REPOSITORY_ID = ? AND NAME LIKE ?",
-            project.getId(),
-            repository.getId(),
-            labelName));
+    final LabelLegacy[] labels = store.find(project.getId(), repository.getId(), labelName);
 
     HashMap<Long, HashSet<String>> map = new HashMap<Long, HashSet<String>>();
-    for (PullRequestLabel label : labels) {
+    for (LabelLegacy label : labels) {
       HashSet<String> names = map.get(label.getPullRequestId());
       if (names == null) {
         names = new HashSet<String>();
@@ -359,8 +347,7 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final PullRequestLabel[] labels = this.ao.find(PullRequestLabel.class, Query.select()
-        .where("PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
+    final LabelLegacy[] labels = store.find(project.getId(), repository.getId());
 
     return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(labels))).build();
   }
@@ -373,26 +360,22 @@ public class PullRequestLabels {
       return Response.status(401).build();
     }
 
-    String[] ids = new String[repositories.size()];
     for (int i = 0; i < repositories.toArray().length; i++) {
       Integer id = repositories.get(i);
+
+      // It also ensures that the user can access to repository
       Repository repository = this.repositoryService.getById(id);
       if (repository == null) {
         return Response.status(404).build();
       }
-
-      ids[i] = String.valueOf(id);
     }
 
-    String query = String.join(",", ids);
-
-    final PullRequestLabel[] labels = this.ao.find(
-        PullRequestLabel.class, Query.select().where("REPOSITORY_ID IN (" + query + ")"));
+    final LabelLegacy[] labels = store.find(repositories.toArray(new Integer[0]));
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
 
-    for (PullRequestLabel label : labels) {
+    for (LabelLegacy label : labels) {
       ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(label.getPullRequestId());
       if (pullRequestLabels == null) {
         pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
@@ -439,30 +422,15 @@ public class PullRequestLabels {
     // duplicates
     //
     // we also need to ignore them in order to save back compatibility
-    final int found = this.ao.count(PullRequestLabel.class, Query.select()
-        .where(
-            "PROJECT_ID = ? "
-                + "AND REPOSITORY_ID = ? "
-                + "AND PULL_REQUEST_ID = ? "
-                + "AND NAME LIKE ?",
-            project.getId(),
-            repository.getId(),
-            pullRequest.getId(),
-            name));
+    final int found =
+        store.countName(project.getId(), repository.getId(), pullRequest.getId(), name);
 
     if (found > 0) {
       return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
     }
 
-    this.ao.create(
-        PullRequestLabel.class,
-        new DBParam("PROJECT_ID", project.getId()),
-        new DBParam("REPOSITORY_ID", repository.getId()),
-        new DBParam("PULL_REQUEST_ID", pullRequest.getId()),
-        new DBParam("NAME", name),
-        new DBParam("COLOR", color));
-
-    this.ao.flush();
+    store.create(project.getId(), repository.getId(), pullRequest.getId(), name, color);
+    store.flush();
 
     return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
   }
@@ -495,26 +463,18 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final PullRequestLabel[] labels = this.ao.find(PullRequestLabel.class, Query.select()
-        .where(
-            "PROJECT_ID = ? "
-                + "AND REPOSITORY_ID = ? "
-                + "AND PULL_REQUEST_ID = ? "
-                + "AND NAME = ?",
-            project.getId(),
-            repository.getId(),
-            pullRequest.getId(),
-            name));
+    final LabelLegacy[] labels =
+        store.find(project.getId(), repository.getId(), pullRequest.getId(), name);
 
     if (labels.length > 0) {
-      this.ao.delete(labels);
-      this.ao.flush();
+      store.delete(labels);
+      store.flush();
     }
 
     return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
   }
 
-  private PullRequestLabelResponse[] getLabelsResponse(PullRequestLabel[] labels) {
+  private PullRequestLabelResponse[] getLabelsResponse(LabelLegacy[] labels) {
     HashMap<String, PullRequestLabelResponse> set = new HashMap<String, PullRequestLabelResponse>();
 
     for (int i = 0; i < labels.length; i++) {

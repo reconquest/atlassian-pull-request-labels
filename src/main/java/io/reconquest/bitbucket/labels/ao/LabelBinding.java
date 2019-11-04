@@ -7,17 +7,8 @@ import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Table;
 
 @Preload
-@Table("PullRequestLabels")
-public interface PullRequestLabel extends Entity {
-  /** It exists here for back-compatibility, do not use that. */
-  @NotNull
-  @Deprecated
-  String getName();
-
-  @StringLength(250)
-  @Deprecated
-  void setName(String name);
-
+@Table("RqPrLabelBinding")
+public interface LabelBinding extends Entity {
   @NotNull
   String getLabelId();
 
