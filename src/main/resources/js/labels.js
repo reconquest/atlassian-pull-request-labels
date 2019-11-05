@@ -26,13 +26,14 @@
         }
 
         this.state = function() {
-            return element.
+            var child = element.
                 _reactRootContainer.
                     _internalRoot.
                         current.
-                            child.
-                                stateNode.
-                                    state;
+                            child;
+
+            // BB 5.12.0 has it's state one level deeper.
+            return (child.stateNode || child.child.stateNode).state;
         }
 
         return this;
