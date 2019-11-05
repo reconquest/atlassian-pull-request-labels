@@ -5,6 +5,7 @@ import net.java.ao.Preload;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Table;
+import net.java.ao.schema.Unique;
 
 @Preload
 @Table("RqPrLabels")
@@ -22,11 +23,6 @@ public interface Label extends Entity {
   void setColor(String color);
 
   @NotNull
-  String getLabelId();
-
-  void setLabelId(int labelId);
-
-  @NotNull
   int getProjectId();
 
   void setProjectId(int projectid);
@@ -37,7 +33,9 @@ public interface Label extends Entity {
   void setRepositoryId(int repositoryid);
 
   @NotNull
-  Long getPullRequestId();
+  @Unique
+  String getHash();
 
-  void setPullRequestId(Long pullrequestid);
+  @StringLength(64)
+  void setHash(String hash);
 }

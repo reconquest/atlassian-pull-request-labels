@@ -46,5 +46,7 @@
     <ao key="ao-module">
         <description>The module configuring the Active Objects service used by this plugin</description>
         <entity>io.reconquest.bitbucket.labels.ao.Label</entity>
+        <entity>io.reconquest.bitbucket.labels.ao.LabelItem</entity>
+        <entity>io.reconquest.bitbucket.labels.ao.LabelLegacy</entity>
     </ao>
 </atlassian-plugin>

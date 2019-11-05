@@ -1,13 +1,11 @@
 package io.reconquest.bitbucket.labels.rest;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.logging.Level.INFO;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.logging.Logger;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -47,8 +45,12 @@ import com.atlassian.plugin.spring.scanner.annotation.component.Scanned;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.upm.api.license.PluginLicenseManager;
 
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import io.reconquest.bitbucket.labels.Store;
-import io.reconquest.bitbucket.labels.ao.LabelLegacy;
+import io.reconquest.bitbucket.labels.ao.LabelItem;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsListResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsMapResponse;
@@ -59,7 +61,8 @@ import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsSaveRespons
 public class PullRequestLabels {
   @ComponentImport private final PluginLicenseManager pluginLicenseManager;
 
-  private static Logger log = Logger.getLogger(PullRequestLabels.class.getSimpleName());
+  // private static Logger log = new
+  // LoggerFactory.getLogger(PullRequestLabels.class.getSimpleName());
 
   @ComponentImport private final RepositoryService repositoryService;
 
@@ -82,7 +85,10 @@ public class PullRequestLabels {
       ProjectService projectService,
       AvatarService avatarService,
       AuthenticationContext authContext) {
-    log.setLevel(INFO);
+
+    Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+    root.setLevel(Level.DEBUG);
+
     this.pluginLicenseManager = pluginLicenseManager;
     this.repositoryService = checkNotNull(repositoryService);
     this.pullRequestService = checkNotNull(pullRequestService);
@@ -144,21 +150,21 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final LabelLegacy[] labels = store.find(project.getId(), repository.getId());
+    final LabelItem[] labels = store.find(project.getId(), repository.getId());
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
 
-    for (LabelLegacy label : labels) {
-      ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(label.getPullRequestId());
-      if (pullRequestLabels == null) {
-        pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
-        map.put(label.getPullRequestId(), pullRequestLabels);
-      }
+    // for (Label label : labels) {
+    //  ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(label.getPullRequestId());
+    //  if (pullRequestLabels == null) {
+    //    pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
+    //    map.put(label.getPullRequestId(), pullRequestLabels);
+    //  }
 
-      pullRequestLabels.add(
-          new PullRequestLabelResponse(label.getID(), label.getName(), "#0000ff"));
-    }
+    //  pullRequestLabels.add(
+    //      new PullRequestLabelResponse(label.getID(), label.getName(), label.getColor()));
+    // }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
   }
@@ -200,17 +206,17 @@ public class PullRequestLabels {
     }
 
     // TODO: support search by multiple labels
-    final LabelLegacy[] labels = store.find(project.getId(), repository.getId(), labelName);
+    final LabelItem[] items = store.find(project.getId(), repository.getId(), labelName);
 
     HashMap<Long, HashSet<String>> map = new HashMap<Long, HashSet<String>>();
-    for (LabelLegacy label : labels) {
-      HashSet<String> names = map.get(label.getPullRequestId());
+    for (LabelItem item : items) {
+      HashSet<String> names = map.get(item.getPullRequestId());
       if (names == null) {
         names = new HashSet<String>();
-        map.put(label.getPullRequestId(), names);
+        map.put(item.getPullRequestId(), names);
       }
 
-      names.add(label.getName());
+      names.add(item.getLabel().getName());
     }
 
     PullRequestSearchRequest.Builder builder = new PullRequestSearchRequest.Builder();
@@ -347,9 +353,9 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final LabelLegacy[] labels = store.find(project.getId(), repository.getId());
+    final LabelItem[] items = store.find(project.getId(), repository.getId());
 
-    return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(labels))).build();
+    return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(items))).build();
   }
 
   @POST
@@ -370,20 +376,20 @@ public class PullRequestLabels {
       }
     }
 
-    final LabelLegacy[] labels = store.find(repositories.toArray(new Integer[0]));
+    final LabelItem[] items = store.find(repositories.toArray(new Integer[0]));
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
 
-    for (LabelLegacy label : labels) {
-      ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(label.getPullRequestId());
+    for (LabelItem item : items) {
+      ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(item.getPullRequestId());
       if (pullRequestLabels == null) {
         pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
-        map.put(label.getPullRequestId(), pullRequestLabels);
+        map.put(item.getPullRequestId(), pullRequestLabels);
       }
 
-      pullRequestLabels.add(
-          new PullRequestLabelResponse(label.getID(), label.getName(), "#0000ff"));
+      pullRequestLabels.add(new PullRequestLabelResponse(
+          item.getID(), item.getLabel().getName(), item.getLabel().getColor()));
     }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
@@ -429,6 +435,10 @@ public class PullRequestLabels {
       return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
     }
 
+    if (color == null) {
+      color = "#0000ff";
+    }
+
     store.create(project.getId(), repository.getId(), pullRequest.getId(), name, color);
     store.flush();
 
@@ -463,23 +473,23 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final LabelLegacy[] labels =
+    final LabelItem[] items =
         store.find(project.getId(), repository.getId(), pullRequest.getId(), name);
 
-    if (labels.length > 0) {
-      store.delete(labels);
+    if (items.length > 0) {
+      store.delete(items);
       store.flush();
     }
 
     return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
   }
 
-  private PullRequestLabelResponse[] getLabelsResponse(LabelLegacy[] labels) {
+  private PullRequestLabelResponse[] getLabelsResponse(LabelItem[] labels) {
     HashMap<String, PullRequestLabelResponse> set = new HashMap<String, PullRequestLabelResponse>();
 
     for (int i = 0; i < labels.length; i++) {
-      set.put(labels[i].getName(), new PullRequestLabelResponse(
-          labels[i].getID(), labels[i].getName(), "#0000ff"));
+      set.put(labels[i].getLabel().getName(), new PullRequestLabelResponse(
+          labels[i].getID(), labels[i].getLabel().getName(), labels[i].getLabel().getColor()));
     }
 
     PullRequestLabelResponse[] response =
