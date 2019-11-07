@@ -111,11 +111,11 @@
 
     var Colors = {
         FromHex: function (hex) {
-            var color = parseInt(hex.slice(1), 16);
-
-            if (isNaN(color)) {
+            if (!hex.match(/^#[\da-f]{6}$/i)) {
                 return null;
             }
+
+            var color = parseInt(hex.slice(1), 16);
 
             return {
                 r: 0xFF & (color >> 16),
@@ -513,8 +513,10 @@
                 var hex = $input.val();
 
                 if (Colors.FromHex(hex) == null) {
-                    // TODO
+                    $input.attr('data-aui-notification-error', '');
                     return;
+                } else {
+                    $input.removeAttr('data-aui-notification-error');
                 }
 
                 this._callbacks.select(hex);
