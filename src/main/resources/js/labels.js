@@ -737,6 +737,8 @@
                                 return;
                             }
 
+                            var color = label.color;
+
                             panel._colorPicker.bind(
                                 this,
                                 {
@@ -751,7 +753,13 @@
                                     }.bind(this),
 
                                     cancel: function() {
-                                        this.color(label.color);
+                                        label.color = color;
+                                        if (color) {
+                                            this.color(color);
+                                        } else {
+                                            this.uncolor();
+                                        }
+                                        // TODO: send API request
                                     }.bind(this),
 
                                     reset: function() {
