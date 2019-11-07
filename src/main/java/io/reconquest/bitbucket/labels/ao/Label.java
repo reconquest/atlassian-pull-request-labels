@@ -7,7 +7,7 @@ import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Table;
 import net.java.ao.schema.Unique;
 
-@Preload
+@Preload("*")
 @Table("RqPrLabels")
 public interface Label extends Entity {
   @NotNull
