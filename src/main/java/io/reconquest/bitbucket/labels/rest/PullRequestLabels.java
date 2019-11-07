@@ -150,21 +150,21 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final LabelItem[] labels = store.find(project.getId(), repository.getId());
+    final LabelItem[] items = store.find(project.getId(), repository.getId());
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
 
-    // for (Label label : labels) {
-    //  ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(label.getPullRequestId());
-    //  if (pullRequestLabels == null) {
-    //    pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
-    //    map.put(label.getPullRequestId(), pullRequestLabels);
-    //  }
+    for (LabelItem item : items) {
+      ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(item.getPullRequestId());
+      if (pullRequestLabels == null) {
+        pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
+        map.put(item.getPullRequestId(), pullRequestLabels);
+      }
 
-    //  pullRequestLabels.add(
-    //      new PullRequestLabelResponse(label.getID(), label.getName(), label.getColor()));
-    // }
+      pullRequestLabels.add(new PullRequestLabelResponse(
+          item.getID(), item.getLabel().getName(), item.getLabel().getColor()));
+    }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
   }
@@ -314,7 +314,6 @@ public class PullRequestLabels {
                 pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
           }
 
-          filteredPullRequests.add(restPullRequest);
           filteredPullRequests.add(restPullRequest);
         }
       }

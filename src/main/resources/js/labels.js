@@ -109,6 +109,36 @@
         return this;
     }
 
+    var Colors = {
+        FromHex: function (hex) {
+            var color = parseInt(hex.slice(1), 16);
+
+            if (isNaN(color)) {
+                return null;
+            }
+
+            return {
+                r: 0xFF & (color >> 16),
+                g: 0xFF & (color >> 8),
+                b: 0xFF & color
+            };
+        },
+
+        ToHex: function (rgb) {
+            return "#" +
+                ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b)
+                    .toString(16).slice(1);
+        },
+
+        Luminance: function (rgb) {
+            return rgb.r*0.299 + rgb.g*0.587 + rgb.b*0.114;
+        },
+
+        IsBright: function(rgb) {
+            return Colors.Luminance(rgb) > 186;
+        }
+    }
+
     //
     // UI elements library.
     //
@@ -145,29 +175,71 @@
         }));
     }
 
-    var Label = function(text, close) {
+    var Label = function(label, options) {
+        var options = Options(options, {
+            on: {}
+        });
+
+        options.on = Options(options.on, {
+            click: function () {},
+            close: null
+        })
+
         var config = {
-            text: text,
-            isCloseable: $.isFunction(close),
+            text: label.name,
+            isCloseable: $.isFunction(options.on.close),
             extraClasses: ['rq-label']
         }
 
-        if (aui.labels) {
-            this._$ = $(aui.labels.label(config));
-        } else {
-            this._$ = $('<span class="aui-label"/>').text(text);
+        var $node;
 
-            if ($.isFunction(close)) {
+        if (aui.labels) {
+            $node = $(aui.labels.label(config));
+        } else {
+            $node = $('<span class="aui-label"/>').text(label.name);
+
+            if ($.isFunction(options.on.close)) {
                 this._$.
                     addClass("aui-label-closeable").
                     append($('<span class="aui-icon aui-icon-close"/>'))
             }
         }
 
-        return this._$.
+        $node.
             find('.aui-icon-close').
-            click(function() { close.bind($(this).parent())(); }).
+            click(function(e) {
+                e.stopPropagation();
+                options.on.close.bind($(this).parent())();
+            }).
             end();
+
+        this.color = function (bg) {
+            var fg = Colors.IsBright(Colors.FromHex(bg))
+                ? '#000000'
+                : '#FFFFFF';
+
+            $node
+                .css('background-color', bg)
+                .css('color', fg)
+                .css('border-color', bg);
+        }
+
+        this.uncolor = function () {
+            $node
+                .css('background-color','')
+                .css('color','')
+                .css('border-color','');
+        }
+
+        this._$ = $.extend($node, this);
+
+        $node.click(options.on.click.bind(this._$));
+
+        if (label.color) {
+            this.color(label.color);
+        }
+
+        return this._$;
     }
 
     var LabelsCell = function(labels) {
@@ -177,7 +249,7 @@
             this._$.append(IconTag());
 
             $.each(labels, function (_, label) {
-                this._$.append(new Label(label.name));
+                this._$.append(new Label(label));
             }.bind(this));
         } else {
             this._$.append('&nbsp;'); // prevent table collapse in Firefox
@@ -240,7 +312,8 @@
             itemize: function(_) { return term },
             empty: '<empty>',
             css: Options(options.css, {
-                dropdown: '',
+                container: '',
+                dropdown: ''
             }),
             on: Options(options.on, {
                 create: __noop__,
@@ -268,10 +341,7 @@
 
                 // push hit first
                 if (hit) {
-                    data.push({
-                        id: hit.id,
-                        name: hit.name,
-                    })
+                    data.push(hit);
                 }
 
                 $.each(matches, function(_, item) {
@@ -279,10 +349,7 @@
                         return;
                     }
 
-                    data.push({
-                        id: item.id,
-                        name: item.name
-                    });
+                    data.push(item);
                 });
 
                 if (options.allowNew) {
@@ -304,7 +371,8 @@
             formatNoMatches: function() {
                 return options.empty;
             },
-            dropdownCssClass: options.css.dropdown
+            dropdownCssClass: options.css.dropdown,
+            containerCssClass: options.css.container
         }
 
         if ($.isFunction(options.on.create) && options.on.create != __noop__) {
@@ -377,13 +445,42 @@
         });
     }
 
-    var Popup = function (options) {
+    var Popup = function (id, body, options) {
         var options = Options(options, {
+            alignment: "left top"
         });
 
-        this._$ = $('<aui-inline-dialog>');
+        this._$template = $('<aui-inline-dialog>')
+            .attr('id', id)
+            .attr('alignment', options.alignment);
 
-        return $.extend(this._$, {
+        this._$anchor = null
+
+        return $.extend(this._$template, {
+            close: function () {
+                this._$.removeAttr('open');
+            }.bind(this),
+
+            open: function (anchor) {
+                if (this._$) {
+                    this._$.detach();
+                }
+
+                if (this._$anchor != null) {
+                    this._$anchor.removeAttr('aria-controls');
+                }
+
+                this._$ = this._$template
+                    .clone()
+                    .append(body)
+                    .appendTo('body');
+
+                this._$anchor = $(anchor);
+
+                this._$anchor.attr('aria-controls', id);
+
+                this._$.attr('open', true);
+            }.bind(this)
         });
     }
 
@@ -395,11 +492,98 @@
     //
 
     var LabelColorPicker = function (options) {
-        var popup = Popup();
+        var options = Options(options, {});
 
-        popup.html('123');
+        var colors = [
+            '#0033CC', '#428BCA', '#44AD8E', '#A8D695', '#5CB85C', '#69D100', '#004E00',
+            '#34495E', '#7F8C8D', '#A295D6', '#5843AD', '#8E44AD', '#FFECDB', '#AD4363',
+            '#D10069', '#CC0033', '#FF0000', '#D9534F', '#D1D100', '#F0AD4E', '#AD8D43'
+        ];
 
-        return popup;
+        var $form = $('<form class="aui"/>').submit(function (e) {
+            e.preventDefault();
+        });
+
+        var $input = $('<input class="text custom-color" type="text"/>')
+            .attr('placeholder', '#RRGGBB');
+
+        $input.on(
+            'input',
+            function () {
+                var hex = $input.val();
+
+                if (Colors.FromHex(hex) == null) {
+                    // TODO
+                    return;
+                }
+
+                this._callbacks.select(hex);
+            }.bind(this)
+        );
+
+        var $colors = $('<div class="suggested-colors"/>');
+
+        $.each(colors, function (_, color) {
+            $colors.append(
+                $('<a>')
+                    .data('color', color)
+                    .css('background-color', color)
+                    .click(function () {
+                        $input.val($(this).data('color')).trigger('input');
+                    })
+            );
+        });
+
+        var $reset = $('<a href="javascript:void(0)" class="rq-reset"/>')
+            .text("Remove color");
+
+        var $cancel = $('<a href="javascript:void(0)" class="rq-cancel"/>')
+            .text("Cancel");
+
+        $cancel.click(
+            function () {
+                this._callbacks.cancel();
+                this.unbind();
+            }.bind(this)
+        );
+
+        $reset.click(
+            function () {
+                this._callbacks.reset();
+                this.unbind();
+            }.bind(this)
+        );
+
+        $form.append($colors);
+        $form.append($input);
+        $form.append($reset);
+        $form.append($cancel);
+
+        var popup = Popup('rq-label-color-picker', $form);
+
+        this.bind = function (anchor, callbacks) {
+            this._callbacks = Options(callbacks, {
+                init: function () {},
+                select: function () {},
+                cancel: function () {},
+                reset: function () {}
+            });
+
+            var color = this._callbacks.init();
+            if (color) {
+                $input.val(color);
+            } else {
+                $input.val('')
+            }
+
+            popup.open(anchor);
+        }
+
+        this.unbind = function () {
+            popup.close();
+        }
+
+        return this;
     }
 
     var AvatarSize_Native = function (size) {
@@ -450,12 +634,13 @@
 
                 return $('<span/>').append(
                     new IconTag(),
-                    new Label(item.name),
+                    new Label(item),
                     item.newly ? '(new)' : ''
                 )
             },
             css: {
-                dropdown: 'rq-labels-select'
+                dropdown: 'rq-labels-select-dropdown',
+                container: 'rq-labels-select'
             }
         }));
     }
@@ -479,6 +664,8 @@
             licensed: true
         });
 
+        this._colorPicker = new LabelColorPicker();
+
         this._labels = {};
 
         this._query = function (term) {
@@ -487,11 +674,14 @@
 
         this.create = function (candidate) {
             var exists = false;
-            $.each(this._labels, function (_, label) {
-                if (label.name == candidate.name) {
-                    exists = true;
-                }
-            }.bind(this))
+            $.each(
+                this._labels,
+                function (_, label) {
+                    if (label.name == candidate.name) {
+                        exists = true;
+                    }
+                }.bind(this)
+            );
 
             if (exists) {
                 this._select.close();
@@ -528,7 +718,9 @@
             return candidate;
         }
 
+        var editing = false;
         this.edit = function() {
+            editing = true;
             this._$.addClass('rq-editable');
         },
 
@@ -538,16 +730,51 @@
             this._labels[label.id ? label.id : label.name] = label;
 
             this._$labels.append(
-                new Label(label.name, function() {
-                    panel._spinner.show();
+                new Label(label, {
+                    on: {
+                        click: function () {
+                            if (!editing) {
+                                return;
+                            }
 
-                    $.when(
-                        options.remove(label)
-                    ).done(function () {
-                        this.remove();
-                        delete panel._labels[label.id];
-                        panel._spinner.hide();
-                    }.bind(this));
+                            panel._colorPicker.bind(
+                                this,
+                                {
+                                    init: function () {
+                                        return label.color;
+                                    },
+
+                                    select: function(bg) {
+                                        label.color = bg;
+                                        this.color(bg);
+                                        // TODO: send API request
+                                    }.bind(this),
+
+                                    cancel: function() {
+                                        this.color(label.color);
+                                    }.bind(this),
+
+                                    reset: function() {
+                                        label.color = null;
+                                        this.uncolor();
+                                        // TODO: send API request
+                                    }.bind(this),
+                                }
+                            );
+                        },
+                        close: function() {
+                            panel._colorPicker.unbind();
+                            panel._spinner.show();
+
+                            $.when(
+                                options.remove(label)
+                            ).done(function () {
+                                this.remove();
+                                delete panel._labels[label.id];
+                                panel._spinner.hide();
+                            }.bind(this));
+                        }
+                    }
                 })
             );
         }
@@ -683,19 +910,21 @@
             $.when(
                 api.getByRepositoryIDs(Object.keys(this._repositories))
             )
-            .done(function (response) {
-                $.each(
-                    response.labels,
-                    function (pr, labels) {
-                        if (!this._cells[pr]) {
-                            this._cells[pr] = this._newLabelCell(labels);
-                        }
-                    }.bind(this)
-                );
+            .done(
+                function (response) {
+                    $.each(
+                        response.labels,
+                        function (pr, labels) {
+                            if (!this._cells[pr]) {
+                                this._cells[pr] = this._newLabelCell(labels);
+                            }
+                        }.bind(this)
+                    );
 
-                this._invokeCallbacks();
-                this._updating = false;
-            }.bind(this))
+                    this._invokeCallbacks();
+                    this._updating = false;
+                }.bind(this)
+            )
             .fail(function (e) {
                 if (e.status == 401) {
                     this._licensed = false;
@@ -949,16 +1178,18 @@
                 }
             });
 
-            this._filter.change(function(event) {
-                if (event.added) {
-                    this._filter.set({label: event.added.name});
-                    this._list.mount();
-                }
+            this._filter.change(
+                function(event) {
+                    if (event.added) {
+                        this._filter.set({label: event.added.name});
+                        this._list.mount();
+                    }
 
-                if (event.removed) {
-                    this._list.unmount();
-                }
-            }.bind(this));
+                    if (event.removed) {
+                        this._list.unmount();
+                    }
+                }.bind(this)
+            );
 
             this._table = {
                 filter: new PullRequestTableFilter(this._filter),
@@ -1185,8 +1416,6 @@
         }
 
         this.addLabel = function(project, repo, pr, label) {
-            // XXX
-            return;
             return $.ajax(
                 this.urls.byPullRequest(project, repo, pr),
                 {

@@ -24,13 +24,14 @@ ignore() {
     "${@}" >&- 2>&-
 }
 
+cd /tmp/
+
 project=$(name)
 bb projects create $project
 
 repo=$(name)
 bb repositories create $project $repo
 
-cd /tmp/
 ignore git clone $URI/scm/$project/$repo.git
 
 cd $repo

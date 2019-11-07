@@ -16,7 +16,6 @@ public interface Label extends Entity {
   @StringLength(250)
   void setName(String name);
 
-  @NotNull
   String getColor();
 
   @StringLength(250)

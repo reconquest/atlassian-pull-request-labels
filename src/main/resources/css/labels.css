@@ -67,23 +67,70 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
 
 .rq-labels-icon-tag {
     margin-right: 5px;
+    top: -1px;
 }
 
 .rq-labels-icon-invalid-license {
     margin-left: 5px;
 }
 
-.aui-dropdown2.aui-style-default.rq-labels-select {
+.rq-label .aui-icon.aui-icon-close {
+    background: none;
+}
+
+.rq-label .aui-icon.aui-icon-close:after {
+    content: "×";
+    font-size: 16px;
+    display: block;
+    text-indent: 0;
+    position: absolute;
+    top: -1px;
+    right: 0px;
+}
+
+.aui-dropdown2.aui-style-default.rq-labels-select-dropdown {
     padding: 0;
 }
 
-.rq-labels-select .rq-label {
+.rq-label {
     display: inline;
 }
 
-.rq-labels-select .select2-search {
+.rq-labels-select-dropdown .select2-search {
     background-color: #f4f5f7;
     border-bottom: 1px solid #dfe1e6;
     padding: 10px;
     position: relative;
+}
+
+.rq-labels-select.aui-select2-container.select2-container .select2-choice .select2-chosen {
+    overflow: visible;
+}
+
+#rq-label-color-picker .suggested-colors {
+    width: 210px;
+    margin-bottom: 10px;
+}
+
+#rq-label-color-picker .suggested-colors a {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    margin-bottom: -5px;
+}
+
+#rq-label-color-picker .rq-cancel {
+  display: block;
+  float: right;
+  margin-top: 10px;
+}
+
+#rq-label-color-picker .rq-reset {
+  display: block;
+  float: left;
+  margin-top: 10px;
+}
+
+#rq-label-color-picker .custom-color {
+  display: block;
 }
