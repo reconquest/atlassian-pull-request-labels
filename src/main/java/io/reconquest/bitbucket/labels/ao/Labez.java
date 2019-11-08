@@ -1,15 +1,21 @@
 package io.reconquest.bitbucket.labels.ao;
 
+import io.reconquest.bitbucket.labels.ao.PullRequestShadowToLabel;
 import net.java.ao.Entity;
+import net.java.ao.ManyToMany;
 import net.java.ao.Preload;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Table;
 import net.java.ao.schema.Unique;
 
-@Preload({"COLOR", "NAME"})
-@Table("wwlabez")
+@Preload
+@Table("v6_labez")
 public interface Labez extends Entity {
+  @NotNull
+  @ManyToMany(value = PullRequestShadowToLabel.class)
+  PullRequestShadow[] getPullRequestShadows();
+
   @NotNull
   String getName();
 

@@ -9,7 +9,8 @@ import java.util.logging.Logger;
 import com.atlassian.activeobjects.external.ActiveObjects;
 
 import io.reconquest.bitbucket.labels.ao.Labez;
-import io.reconquest.bitbucket.labels.ao.LabezItem;
+import io.reconquest.bitbucket.labels.ao.PullRequestShadow;
+import io.reconquest.bitbucket.labels.ao.PullRequestShadowToLabel;
 import net.java.ao.DBParam;
 
 public class StoreZ {
@@ -20,9 +21,9 @@ public class StoreZ {
     this.ao = ao;
   }
 
-  // public LabezItem[] find(int projectId, int repositoryId, long pullRequestId) {
+  // public PullRequestShadow[] find(int projectId, int repositoryId, long pullRequestId) {
   //  return this.ao.find(
-  //      LabezItem.class,
+  //      PullRequestShadow.class,
   //      select(
   //          "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND item.PULL_REQUEST_ID = ?",
   //          projectId,
@@ -32,22 +33,22 @@ public class StoreZ {
 
   // private Query select(String clause, Object... params) {
   //  return Query.select()
-  //      .from(LabezItem.class)
-  //      .alias(LabezItem.class, "item")
+  //      .from(PullRequestShadow.class)
+  //      .alias(PullRequestShadow.class, "item")
   //      .join(Labez.class, "label.ID = item.LABEZ_ID")
   //      .alias(Labez.class, "label")
   //      .where(clause, params);
   // }
 
-  // public LabezItem[] find(int projectId, int repositoryId) {
+  // public PullRequestShadow[] find(int projectId, int repositoryId) {
   //  return this.ao.find(
-  //      LabezItem.class,
+  //      PullRequestShadow.class,
   //      select("item.PROJECT_ID = ? AND item.REPOSITORY_ID = ?", projectId, repositoryId));
   // }
 
-  // public LabezItem[] find(int projectId, int repositoryId, String name) {
+  // public PullRequestShadow[] find(int projectId, int repositoryId, String name) {
   //  return this.ao.find(
-  //      LabezItem.class,
+  //      PullRequestShadow.class,
   //      select(
   //          "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND label.NAME LIKE ?",
   //          projectId,
@@ -55,9 +56,10 @@ public class StoreZ {
   //          name));
   // }
 
-  // public LabezItem[] find(int projectId, int repositoryId, long pullRequestId, String name) {
+  // public PullRequestShadow[] find(int projectId, int repositoryId, long pullRequestId, String
+  // name) {
   //  return this.ao.find(
-  //      LabezItem.class,
+  //      PullRequestShadow.class,
   //      select(
   //          "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND item.PULL_REQUEST_ID = ?"
   //              + " AND label.NAME LIKE ?",
@@ -67,19 +69,19 @@ public class StoreZ {
   //          name));
   // }
 
-  // public LabezItem[] find(Integer[] repositories) {
+  // public PullRequestShadow[] find(Integer[] repositories) {
   //  String[] ids = new String[repositories.length];
   //  for (int i = 0; i < repositories.length; i++) {
   //    ids[i] = String.valueOf(repositories[i]);
   //  }
 
   //  String query = String.join(",", ids);
-  //  return this.ao.find(LabezItem.class, select("item.REPOSITORY_ID IN (" + query + ")"));
+  //  return this.ao.find(PullRequestShadow.class, select("item.REPOSITORY_ID IN (" + query + ")"));
   // }
 
   // public int countName(int projectId, int repositoryId, long pullRequestId, String name) {
   //  return this.ao.count(
-  //      LabezItem.class,
+  //      PullRequestShadow.class,
   //      select(
   //          "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND item.PULL_REQUEST_ID = ?"
   //              + " AND label.NAME LIKE ?",
@@ -99,28 +101,36 @@ public class StoreZ {
         new DBParam("HASH", hash(projectId, repositoryId, name)));
   }
 
-  public LabezItem createLabezItem(
-      int projectId, int repositoryId, long pullRequestId, Labez label) {
-    System.err.printf("XXXXXXX StoreZ.java:104 creating labelz_id \n");
+  public PullRequestShadow createPullRequestShadow(
+      int projectId, int repositoryId, long pullRequestId) {
     return this.ao.create(
-        LabezItem.class,
-        new DBParam("LABEZ_ID", label.getID()),
+        PullRequestShadow.class,
         new DBParam("PROJECT_ID", projectId),
         new DBParam("REPOSITORY_ID", repositoryId),
         new DBParam("PULL_REQUEST_ID", pullRequestId));
   }
 
-  public LabezItem create(
+  public PullRequestShadowToLabel createPullRequestShadowToLabel(
+      PullRequestShadow pullRequestShadow, Labez labez) {
+    return this.ao.create(
+        PullRequestShadowToLabel.class, new DBParam("LABEL_ID", labez.getID()), new DBParam(
+            "PULL_REQUEST_SHADOW_ID", pullRequestShadow.getID()));
+  }
+
+  public void create(
       int projectId, int repositoryId, long pullRequestId, String name, String color) {
     Labez label = createLabez(projectId, repositoryId, name, color);
-    return createLabezItem(projectId, repositoryId, pullRequestId, label);
+    PullRequestShadow pullRequestShadow =
+        createPullRequestShadow(projectId, repositoryId, pullRequestId);
+
+    createPullRequestShadowToLabel(pullRequestShadow, label);
   }
 
   public void flush() {
     ao.flush();
   }
 
-  public void delete(LabezItem[] labels) {
+  public void delete(PullRequestShadow[] labels) {
     ao.delete(labels);
   }
 
@@ -150,7 +160,7 @@ public class StoreZ {
     return hexString.toString();
   }
 
-  // public LabezItem[] find(LabezItem[] items) {
+  // public PullRequestShadow[] find(PullRequestShadow[] items) {
   //  if (items.length == 0) {
   //    return null;
   //  }
@@ -158,7 +168,7 @@ public class StoreZ {
   //  return this.ao.find(Labez.class, select("ID IN (" + ids(items) + ")"));
   // }
 
-  // public String ids(LabezItem[] items) {
+  // public String ids(PullRequestShadow[] items) {
   //  String[] strings = new String[items.length];
   //  for (int i = 0; i < items.length; i++) {
   //    strings[i] = String.valueOf(items[i].getID());
