@@ -157,7 +157,7 @@
                         </product>
                     </products>
                     <instructions>
-                        <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
+                        <!--<Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>-->
                         <!-- Add package to export here -->
                         <!--<Export-Package>io.reconquest.bitbucket.api,</Export-Package>-->
                         <!-- Add package import here -->
@@ -230,7 +230,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <ao.version>1.2.2</ao.version>
+        <ao.version>3.1.7</ao.version>
         <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
     </properties>
 </project>
