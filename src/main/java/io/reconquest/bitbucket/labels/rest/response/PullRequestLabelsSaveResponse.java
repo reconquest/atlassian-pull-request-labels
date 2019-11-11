@@ -2,23 +2,23 @@ package io.reconquest.bitbucket.labels.rest.response;
 
 import javax.xml.bind.annotation.*;
 
-@XmlRootElement(name = "success")
+@XmlRootElement(name = "label_id")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class PullRequestLabelsSaveResponse {
-  @XmlElement(name = "success")
-  private boolean success;
+  @XmlElement(name = "label_id")
+  private int id;
 
   public PullRequestLabelsSaveResponse() {}
 
-  public PullRequestLabelsSaveResponse(boolean success) {
-    this.success = success;
+  public PullRequestLabelsSaveResponse(int id) {
+    this.id = id;
   }
 
-  public boolean getSuccess() {
-    return success;
+  public int getId() {
+    return id;
   }
 
-  public void setSuccess(boolean success) {
-    this.success = success;
+  public void setSuccess(int id) {
+    this.id = id;
   }
 }

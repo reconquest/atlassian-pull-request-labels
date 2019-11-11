@@ -419,9 +419,9 @@ public class PullRequestLabels {
       store.update(project.getId(), repository.getId(), labelId, name, color);
       store.flush();
 
-      return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+      return Response.ok().build();
     } catch (Exception e) {
-      return Response.ok(new PullRequestLabelsSaveResponse(false)).build();
+      return Response.status(500).build();
     }
   }
 
@@ -458,21 +458,19 @@ public class PullRequestLabels {
     // duplicates
     //
     // we also need to ignore them in order to save back compatibility
-    final int found =
-        store.countName(project.getId(), repository.getId(), pullRequest.getId(), name);
+    final LabelItem[] found =
+        store.find(project.getId(), repository.getId(), pullRequest.getId(), name);
 
-    if (found > 0) {
-      return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+    if (found.length > 0) {
+      return Response.ok(new PullRequestLabelsSaveResponse(found[0].getLabel().getID())).build();
     }
 
-    if (color == null) {
-      color = "#0000ff";
-    }
+    final LabelItem created =
+        store.create(project.getId(), repository.getId(), pullRequest.getId(), name, color);
 
-    store.create(project.getId(), repository.getId(), pullRequest.getId(), name, color);
     store.flush();
 
-    return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+    return Response.ok(new PullRequestLabelsSaveResponse(created.getLabel().getID())).build();
   }
 
   @DELETE
@@ -511,7 +509,7 @@ public class PullRequestLabels {
       store.flush();
     }
 
-    return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+    return Response.ok().build();
   }
 
   private PullRequestLabelResponse[] getLabelsResponse(LabelItem[] labels) {

@@ -78,18 +78,6 @@ public class Store {
     return this.ao.find(LabelItem.class, select("item.REPOSITORY_ID IN (" + query + ")"));
   }
 
-  public int countName(int projectId, int repositoryId, long pullRequestId, String name) {
-    return this.ao.count(
-        LabelItem.class,
-        select(
-            "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND item.PULL_REQUEST_ID = ?"
-                + " AND label.NAME LIKE ?",
-            projectId,
-            repositoryId,
-            pullRequestId,
-            name));
-  }
-
   public Label createLabel(int projectId, int repositoryId, String name, String color) {
     try {
       Label label = this.ao.create(

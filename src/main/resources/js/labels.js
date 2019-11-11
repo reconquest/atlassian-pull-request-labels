@@ -214,6 +214,10 @@
             end();
 
         this.color = function (bg) {
+            if (bg == null) {
+                return this.uncolor();
+            }
+
             var fg = Colors.IsBright(Colors.FromHex(bg))
                 ? '#000000'
                 : '#FFFFFF';
@@ -458,7 +462,9 @@
 
         return $.extend(this._$template, {
             close: function () {
-                this._$.removeAttr('open');
+                if (this._$) {
+                    this._$.removeAttr('open');
+                }
             }.bind(this),
 
             open: function (anchor) {
@@ -551,7 +557,7 @@
 
         $reset.click(
             function () {
-                this._callbacks.reset();
+                this._callbacks.select(null);
                 this.unbind();
             }.bind(this)
         );
@@ -568,7 +574,6 @@
                 init: function () {},
                 select: function () {},
                 cancel: function () {},
-                reset: function () {}
             });
 
             var color = this._callbacks.init();
@@ -663,6 +668,7 @@
             query: function(_) { return [] },
             add: function(_) {},
             remove: function(_) {},
+            update: function(_) {},
             licensed: true
         });
 
@@ -710,12 +716,18 @@
 
             $.when(
                 options.add(candidate)
-            ).done(function () {
-                this.label(candidate);
-                this._spinner.hide();
-                this._select.empty()
-                this._select.enable();
-            }.bind(this));
+            ).done(
+                function (response) {
+                    candidate.label_id = response.label_id;
+
+                    this.label(candidate);
+                    this._spinner.hide();
+                    this._select.empty()
+                    this._select.enable();
+                }.bind(this)
+            );
+
+            this._$help.show();
 
             return candidate;
         }
@@ -724,12 +736,15 @@
         this.edit = function() {
             editing = true;
             this._$.addClass('rq-editable');
-        },
+            if (!$.isEmptyObject(this._labels)) {
+                this._$help.show();
+            }
+        }
 
         this.label = function (label) {
             var panel = this;
 
-            this._labels[label.id ? label.id : label.name] = label;
+            this._labels[label.label_id] = label;
 
             this._$labels.append(
                 new Label(label, {
@@ -739,7 +754,15 @@
                                 return;
                             }
 
-                            var color = label.color;
+                            var select = function(color) {
+                                label.color = color;
+                                this.color(color);
+                                options.update(label);
+                            }.bind(this);
+
+                            var cancel = function (originalColor) {
+                                return function() { select(originalColor); }
+                            }(label.color);
 
                             panel._colorPicker.bind(
                                 this,
@@ -748,27 +771,8 @@
                                         return label.color;
                                     },
 
-                                    select: function(bg) {
-                                        label.color = bg;
-                                        this.color(bg);
-                                        // TODO: send API request
-                                    }.bind(this),
-
-                                    cancel: function() {
-                                        label.color = color;
-                                        if (color) {
-                                            this.color(color);
-                                        } else {
-                                            this.uncolor();
-                                        }
-                                        // TODO: send API request
-                                    }.bind(this),
-
-                                    reset: function() {
-                                        label.color = null;
-                                        this.uncolor();
-                                        // TODO: send API request
-                                    }.bind(this),
+                                    select: select,
+                                    cancel: cancel
                                 }
                             );
                         },
@@ -824,6 +828,10 @@
             submit(function() { return false }).
             append(this._select);
 
+        this._$help = $('<div class="rq-labels-side-panel-tip">').text(
+            'Tip: You can change label color by clicking on it.'
+        );
+
         this._$messages = $('<div class="rq-labels-messages"/>')
 
         this._$messages.exist = new MessageError()
@@ -833,6 +841,7 @@
             this._header,
             this._$labels,
             this._$form,
+            this._$help,
             this._$messages
         );
 
@@ -1293,6 +1302,14 @@
                         context.getPullRequestID(),
                         label
                     );
+                }.bind(this),
+
+                update: function (label) {
+                    return api.updateLabel(
+                        context.getProjectKey(),
+                        context.getRepositorySlug(),
+                        label
+                    );
                 }.bind(this)
             });
         }
@@ -1329,12 +1346,14 @@
                     context.getPullRequestID()
                 )
             )
-            .done(function (getByRepositoryXHR, getByPullRequestXHR) {
-                this._render(
-                    getByRepositoryXHR[0].labels,
-                    getByPullRequestXHR[0].labels
-                );
-            }.bind(this))
+            .done(
+                function (getByRepositoryXHR, getByPullRequestXHR) {
+                    this._render(
+                        getByRepositoryXHR[0].labels,
+                        getByPullRequestXHR[0].labels
+                    );
+                }.bind(this)
+            )
             .fail(function (e) {
                 if (e.status == 401) {
                     this._renderUnlicensed();
@@ -1398,6 +1417,10 @@
                 return this.byPullRequestList(project, repo) + ':search' +
                     '?' + Query(filter);
             },
+
+            update: function (project, repo, labelID) {
+                return this.byRepository(project, repo) + 'labels/' + labelID;
+            }
         });
 
         this.getByRepositoryIDs = function(repos) {
@@ -1444,6 +1467,19 @@
                 {
                     data: {name: label.name},
                     method: "DELETE",
+                    headers: {
+                        "X-Atlassian-Token": "no-check"
+                    }
+                }
+            );
+        }
+
+        this.updateLabel = function(project, repo, label) {
+            return $.ajax(
+                this.urls.update(project, repo, label.label_id),
+                {
+                    data: {name: label.name, color: label.color},
+                    method: "PUT",
                     headers: {
                         "X-Atlassian-Token": "no-check"
                     }

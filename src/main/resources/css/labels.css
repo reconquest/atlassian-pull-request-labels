@@ -107,6 +107,14 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
     overflow: visible;
 }
 
+.rq-labels-side-panel-tip {
+  margin-top: 10px;
+  color: #7a869a;
+  font-size: 12px;
+  font-style: italic;
+  display: none;
+}
+
 #rq-label-color-picker .suggested-colors {
     width: 210px;
     margin-bottom: 10px;
