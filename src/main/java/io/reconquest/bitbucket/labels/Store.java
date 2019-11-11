@@ -91,13 +91,27 @@ public class Store {
   }
 
   public Label createLabel(int projectId, int repositoryId, String name, String color) {
-    return this.ao.create(
-        Label.class,
-        new DBParam("PROJECT_ID", projectId),
-        new DBParam("REPOSITORY_ID", repositoryId),
-        new DBParam("NAME", name),
-        new DBParam("COLOR", color),
-        new DBParam("HASH", hash(projectId, repositoryId, name)));
+    try {
+      Label label = this.ao.create(
+          Label.class,
+          new DBParam("PROJECT_ID", projectId),
+          new DBParam("REPOSITORY_ID", repositoryId),
+          new DBParam("NAME", name),
+          new DBParam("COLOR", color),
+          new DBParam("HASH", hash(projectId, repositoryId, name)));
+      return label;
+    } catch (Exception e) { // No way to handle duplicate hash
+      Label[] labels = this.ao.find(Label.class, Query.select()
+          .from(Label.class)
+          .where(
+              "PROJECT_ID = ? AND REPOSITORY_ID = ? AND NAME = ?", projectId, repositoryId, name));
+      if (labels.length == 0) {
+        // throw what we have if we can't find the same label
+        throw e;
+      }
+
+      return labels[0];
+    }
   }
 
   public LabelItem createLabelItem(
@@ -114,6 +128,26 @@ public class Store {
       int projectId, int repositoryId, long pullRequestId, String name, String color) {
     Label label = createLabel(projectId, repositoryId, name, color);
     return createLabelItem(projectId, repositoryId, pullRequestId, label);
+  }
+
+  public void update(int projectId, int repositoryId, int labelId, String name, String color)
+      throws Exception {
+    Label[] labels = this.ao.find(Label.class, Query.select()
+        .from(Label.class)
+        .where(
+            "PROJECT_ID = ? AND REPOSITORY_ID = ? AND ID = ?", projectId, repositoryId, labelId));
+    if (labels.length == 0) {
+      log.warning("no labels found with such conditions");
+      return;
+    }
+
+    Label label = labels[0];
+
+    label.setName(name);
+    label.setColor(color);
+    label.setHash(hash(projectId, repositoryId, name));
+
+    label.save();
   }
 
   public void flush() {

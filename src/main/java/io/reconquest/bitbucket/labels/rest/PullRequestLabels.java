@@ -13,6 +13,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -45,10 +46,6 @@ import com.atlassian.plugin.spring.scanner.annotation.component.Scanned;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.upm.api.license.PluginLicenseManager;
 
-import org.slf4j.LoggerFactory;
-
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import io.reconquest.bitbucket.labels.Store;
 import io.reconquest.bitbucket.labels.ao.LabelItem;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelResponse;
@@ -60,9 +57,6 @@ import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsSaveRespons
 @Scanned
 public class PullRequestLabels {
   @ComponentImport private final PluginLicenseManager pluginLicenseManager;
-
-  // private static Logger log = new
-  // LoggerFactory.getLogger(PullRequestLabels.class.getSimpleName());
 
   @ComponentImport private final RepositoryService repositoryService;
 
@@ -85,9 +79,6 @@ public class PullRequestLabels {
       ProjectService projectService,
       AvatarService avatarService,
       AuthenticationContext authContext) {
-
-    Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    root.setLevel(Level.DEBUG);
 
     this.pluginLicenseManager = pluginLicenseManager;
     this.repositoryService = checkNotNull(repositoryService);
@@ -163,7 +154,10 @@ public class PullRequestLabels {
       }
 
       pullRequestLabels.add(new PullRequestLabelResponse(
-          item.getID(), item.getLabel().getName(), item.getLabel().getColor()));
+          item.getID(),
+          item.getLabel().getID(),
+          item.getLabel().getName(),
+          item.getLabel().getColor()));
     }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
@@ -388,10 +382,47 @@ public class PullRequestLabels {
       }
 
       pullRequestLabels.add(new PullRequestLabelResponse(
-          item.getID(), item.getLabel().getName(), item.getLabel().getColor()));
+          item.getID(),
+          item.getLabel().getID(),
+          item.getLabel().getName(),
+          item.getLabel().getColor()));
     }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
+  }
+
+  @PUT
+  @Produces({MediaType.APPLICATION_JSON})
+  @Consumes("application/x-www-form-urlencoded")
+  @Path("/{project_slug}/{repository_slug}/labels/{label_id}")
+  public Response update(
+      @PathParam("project_slug") String projectSlug,
+      @PathParam("repository_slug") String repositorySlug,
+      @PathParam("label_id") int labelId,
+      @FormParam("name") String name,
+      @FormParam("color") String color) {
+    if (!this.isLicenseValid()) {
+      return Response.status(401).build();
+    }
+
+    Project project = this.projectService.getByKey(projectSlug);
+    if (project == null) {
+      return Response.status(404).build();
+    }
+
+    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    if (repository == null) {
+      return Response.status(404).build();
+    }
+
+    try {
+      store.update(project.getId(), repository.getId(), labelId, name, color);
+      store.flush();
+
+      return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+    } catch (Exception e) {
+      return Response.ok(new PullRequestLabelsSaveResponse(false)).build();
+    }
   }
 
   @POST
@@ -488,7 +519,10 @@ public class PullRequestLabels {
 
     for (int i = 0; i < labels.length; i++) {
       set.put(labels[i].getLabel().getName(), new PullRequestLabelResponse(
-          labels[i].getID(), labels[i].getLabel().getName(), labels[i].getLabel().getColor()));
+          labels[i].getID(),
+          labels[i].getLabel().getID(),
+          labels[i].getLabel().getName(),
+          labels[i].getLabel().getColor()));
     }
 
     PullRequestLabelResponse[] response =
