@@ -97,13 +97,6 @@
         return this;
     }
 
-    var InvalidLicenseNagbar = function () {
-        return new Nagbar(
-            'License for Pull Request Labels Add-on is missing or expired. ' +
-            'Visit "Manage Apps" page in your Bitbucket instance for more info.'
-        );
-    }
-
     var ViewNotApplicable = function () {
         this.mount = function () {
             return null;
@@ -489,12 +482,16 @@
     }
 
     var Nagbar = function (body) {
+        this._shown = false;
         this._body = body;
 
         this.show = function () {
-            require(['aui/banner'], function (banner) {
-                banner({ body: this._body });
-            }.bind(this));
+            if (this._shown) {
+                return;
+            }
+
+            require('aui/banner')({ body: this._body });
+            this._shown = true;
         }
 
         return this;
@@ -910,7 +907,7 @@
             )
             .fail(function (e) {
                 if (e.status == 401) {
-                    this._invokeCallbacks();
+                    InvalidLicenseNagbar.show();
                 } else {
                     throw e;
                 }
@@ -1085,7 +1082,6 @@
         this.mount = function(table) {
             this._observer.observe(table);
             this._render(table);
-
         }
 
         return this;
@@ -1198,7 +1194,7 @@
             )
             .fail(function (e) {
                 if (e.status == 401) {
-                    new InvalidLicenseNagbar().show();
+                    InvalidLicenseNagbar.show();
                 } else {
                     throw e;
                 }
@@ -1299,7 +1295,7 @@
             )
             .fail(function (e) {
                 if (e.status == 401) {
-                    new InvalidLicenseNagbar().show();
+                    InvalidLicenseNagbar.show();
                 } else {
                     throw e;
                 }
@@ -1320,10 +1316,11 @@
         this._provider = new LabelsCellProviderDynamic(this._$, api);
 
         this.mount = function() {
-            this._$.each(function(_, container) {
-                var table = new PullRequestTable(this._provider);
-                table.mount($(container));
-            }.bind(this));
+            this._$.each(
+                function(_, container) {
+                    new PullRequestTable(this._provider).mount($(container));
+                }.bind(this)
+            );
         }
 
         return this;
@@ -1501,6 +1498,11 @@
         ViewPullRequestListWithFilter,
         ViewDashboard
     ];
+
+    var InvalidLicenseNagbar = new Nagbar(
+        'License for Pull Request Labels Add-on is missing or expired. ' +
+        'Visit "Manage Apps" page in your Bitbucket instance for more info.'
+    )
 
     $(document).ready(function () {
         var context = new Context();

@@ -45,6 +45,10 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
     display: none;
 }
 
+.rq-editable .rq-label {
+    cursor: pointer;
+}
+
 .rq-labels-side-panel.rq-editable .rq-labels-messages .rq-label,
 .aui-label.aui-label-closeable.rq-label {
     padding-right: 5px;
