@@ -2,6 +2,11 @@ package io.reconquest.bitbucket.labels.service;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import io.reconquest.bitbucket.labels.Label;
 import io.reconquest.bitbucket.labels.Store;
 
 public class LabelsService {
@@ -19,30 +24,40 @@ public class LabelsService {
   public void start() {
     System.err.printf("XXXXXXX LabelsService.java:60 start() invoked \n");
 
-    // try {
-    //  store.create(1, 1, 1, "1_q", "#0000ff");
-    //  store.create(1, 1, 1, "1_w", "#00ffff");
-    //  store.create(1, 1, 2, "2_q", "#0000ff");
-    //  store.create(1, 1, 2, "2_w", "#00ffff");
+    // LicenseValidator validator = new LicenseValidator();
+    // System.err.printf("XXXXXXX LabelsService.java:27 validator %s \n", validator);
 
-    //  store.create(1, 1, 2, "2_w", "#00ffff");
-    // } catch (Exception e) {
-    //  System.err.printf("XXXXXXX LabelsService.java:31 e.getClass() %s \n", e.getClass());
-    // }
+    Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+    root.setLevel(Level.DEBUG);
 
-    // LabelItem[] items = store.find(1, 1);
-    // for (int i = 0; i < items.length; i++) {
-    //  LabelItem item = items[i];
+    try {
+      store.create(1, 1, 1, "1_q", "#0000ff");
+      store.create(1, 1, 1, "1_w", "#00ffff");
+      store.create(1, 1, 2, "2_q", "#0000ff");
+      store.create(1, 1, 2, "2_w", "#00ffff");
 
-    //  System.err.printf(
-    //      "XXXXXXX id: %s, p_id: %s, r_id: %s, l_id: %s, name: %s, color: %s \n",
-    //      item.getID(),
-    //      item.getProjectId(),
-    //      item.getRepositoryId(),
-    //      item.getLabel().getID(),
-    //      item.getLabel().getName(),
-    //      item.getLabel().getColor());
-    // }
+      store.create(1, 1, 2, "2_w", "#00ffff");
+    } catch (Exception e) {
+      System.err.printf("XXXXXXX LabelsService.java:31 e.getClass() %s \n", e.getClass());
+    }
+
+    Label[] items = store.find(1, 1);
+    for (int i = 0; i < items.length; i++) {
+      Label item = items[i];
+
+      System.err.printf("XXXXXXX LabelsService.java:36 item.getLabelID() %s \n", item.getLabelId());
+
+      System.err.printf(
+          "XXXXXXX id: %s, p_id: %s, r_id: %s, l_id: %s, name: %s, color: %s \n",
+          item.getItemId(),
+          item.getProjectId(),
+          item.getRepositoryId(),
+          item.getLabelId(),
+          item.getName(),
+          item.getColor());
+    }
+
+    root.setLevel(Level.INFO);
 
     // activeObjects.deleteWithSQL(PullRequestShadowToLabel.class, "ID > ?", 0);
     // activeObjects.deleteWithSQL(PullRequestShadow.class, "ID > ?", 0);
@@ -52,9 +67,6 @@ public class LabelsService {
     // store.create(100, 200, 302, "302_q", "#000000");
     // store.create(100, 200, 301, "301_w", "#000000");
     // store.create(100, 200, 302, "302_w", "#000000");
-
-    // Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    // root.setLevel(Level.DEBUG);
 
     //// LabezItem[] results = store.find(100, 200, 301);
     // Query query = Query.select()
@@ -82,6 +94,5 @@ public class LabelsService {
     //  }
     // }
 
-    // root.setLevel(Level.INFO);
   }
 }

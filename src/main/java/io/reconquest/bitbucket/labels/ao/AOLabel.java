@@ -8,8 +8,8 @@ import net.java.ao.schema.Table;
 import net.java.ao.schema.Unique;
 
 @Preload("*")
-@Table("RqPrLabels")
-public interface Label extends Entity {
+@Table("v2_label")
+public interface AOLabel extends Entity {
   @NotNull
   String getName();
 
@@ -24,12 +24,8 @@ public interface Label extends Entity {
   @NotNull
   int getProjectId();
 
-  void setProjectId(int projectid);
-
   @NotNull
   int getRepositoryId();
-
-  void setRepositoryId(int repositoryid);
 
   @NotNull
   @Unique

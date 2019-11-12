@@ -46,8 +46,9 @@ import com.atlassian.plugin.spring.scanner.annotation.component.Scanned;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.upm.api.license.PluginLicenseManager;
 
+import io.reconquest.bitbucket.labels.Label;
+import io.reconquest.bitbucket.labels.LicenseValidator;
 import io.reconquest.bitbucket.labels.Store;
-import io.reconquest.bitbucket.labels.ao.LabelItem;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsListResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsMapResponse;
@@ -69,6 +70,7 @@ public class PullRequestLabels {
   @ComponentImport private final AuthenticationContext authContext;
 
   private final Store store;
+  private final LicenseValidator licenseValidator = new LicenseValidator();
 
   @Inject
   public PullRequestLabels(
@@ -97,7 +99,7 @@ public class PullRequestLabels {
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -127,7 +129,7 @@ public class PullRequestLabels {
   public Response listByRepositoryHash(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -141,23 +143,19 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final LabelItem[] items = store.find(project.getId(), repository.getId());
+    final Label[] items = store.find(project.getId(), repository.getId());
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
 
-    for (LabelItem item : items) {
+    for (Label item : items) {
       ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(item.getPullRequestId());
       if (pullRequestLabels == null) {
         pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
         map.put(item.getPullRequestId(), pullRequestLabels);
       }
 
-      pullRequestLabels.add(new PullRequestLabelResponse(
-          item.getID(),
-          item.getLabel().getID(),
-          item.getLabel().getName(),
-          item.getLabel().getColor()));
+      pullRequestLabels.add(new PullRequestLabelResponse(item));
     }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
@@ -177,7 +175,7 @@ public class PullRequestLabels {
       @QueryParam("is_reviewer") Boolean isReviewer,
       @QueryParam("start") Integer start,
       @QueryParam("limit") Integer limit) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -200,17 +198,17 @@ public class PullRequestLabels {
     }
 
     // TODO: support search by multiple labels
-    final LabelItem[] items = store.find(project.getId(), repository.getId(), labelName);
+    final Label[] items = store.find(project.getId(), repository.getId(), labelName);
 
     HashMap<Long, HashSet<String>> map = new HashMap<Long, HashSet<String>>();
-    for (LabelItem item : items) {
+    for (Label item : items) {
       HashSet<String> names = map.get(item.getPullRequestId());
       if (names == null) {
         names = new HashSet<String>();
         map.put(item.getPullRequestId(), names);
       }
 
-      names.add(item.getLabel().getName());
+      names.add(item.getName());
     }
 
     PullRequestSearchRequest.Builder builder = new PullRequestSearchRequest.Builder();
@@ -332,7 +330,7 @@ public class PullRequestLabels {
   public Response listByRepository(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -346,7 +344,7 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final LabelItem[] items = store.find(project.getId(), repository.getId());
+    final Label[] items = store.find(project.getId(), repository.getId());
 
     return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(items))).build();
   }
@@ -355,7 +353,7 @@ public class PullRequestLabels {
   @Produces({MediaType.APPLICATION_JSON})
   @Path("/list")
   public Response list(@FormParam("repository_id") List<Integer> repositories) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -369,23 +367,19 @@ public class PullRequestLabels {
       }
     }
 
-    final LabelItem[] items = store.find(repositories.toArray(new Integer[0]));
+    final Label[] items = store.find(repositories.toArray(new Integer[0]));
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
 
-    for (LabelItem item : items) {
+    for (Label item : items) {
       ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(item.getPullRequestId());
       if (pullRequestLabels == null) {
         pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
         map.put(item.getPullRequestId(), pullRequestLabels);
       }
 
-      pullRequestLabels.add(new PullRequestLabelResponse(
-          item.getID(),
-          item.getLabel().getID(),
-          item.getLabel().getName(),
-          item.getLabel().getColor()));
+      pullRequestLabels.add(new PullRequestLabelResponse(item));
     }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
@@ -401,7 +395,7 @@ public class PullRequestLabels {
       @PathParam("label_id") int labelId,
       @FormParam("name") String name,
       @FormParam("color") String color) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -435,7 +429,7 @@ public class PullRequestLabels {
       @PathParam("pull_request_id") Long pullRequestId,
       @FormParam("name") String name,
       @FormParam("color") String color) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -458,19 +452,19 @@ public class PullRequestLabels {
     // duplicates
     //
     // we also need to ignore them in order to save back compatibility
-    final LabelItem[] found =
+    final Label[] found =
         store.find(project.getId(), repository.getId(), pullRequest.getId(), name);
 
     if (found.length > 0) {
-      return Response.ok(new PullRequestLabelsSaveResponse(found[0].getLabel().getID())).build();
+      return Response.ok(new PullRequestLabelsSaveResponse(found[0].getLabelId())).build();
     }
 
-    final LabelItem created =
+    final Label created =
         store.create(project.getId(), repository.getId(), pullRequest.getId(), name, color);
 
     store.flush();
 
-    return Response.ok(new PullRequestLabelsSaveResponse(created.getLabel().getID())).build();
+    return Response.ok(new PullRequestLabelsSaveResponse(created.getItemId())).build();
   }
 
   @DELETE
@@ -482,7 +476,7 @@ public class PullRequestLabels {
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId,
       @FormParam("name") String name) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -501,48 +495,27 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final LabelItem[] items =
+    final Label[] items =
         store.find(project.getId(), repository.getId(), pullRequest.getId(), name);
 
     if (items.length > 0) {
-      store.delete(items);
+      store.deleteItems(items);
       store.flush();
     }
 
     return Response.ok().build();
   }
 
-  private PullRequestLabelResponse[] getLabelsResponse(LabelItem[] labels) {
+  private PullRequestLabelResponse[] getLabelsResponse(Label[] labels) {
     HashMap<String, PullRequestLabelResponse> set = new HashMap<String, PullRequestLabelResponse>();
 
     for (int i = 0; i < labels.length; i++) {
-      set.put(labels[i].getLabel().getName(), new PullRequestLabelResponse(
-          labels[i].getID(),
-          labels[i].getLabel().getID(),
-          labels[i].getLabel().getName(),
-          labels[i].getLabel().getColor()));
+      set.put(labels[i].getName(), new PullRequestLabelResponse(labels[i]));
     }
 
     PullRequestLabelResponse[] response =
         set.values().toArray(new PullRequestLabelResponse[set.size()]);
 
     return response;
-  }
-
-  public boolean isLicenseDefined() {
-    return true;
-    // Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
-    // return licenseOption.isDefined();
-  }
-
-  public boolean isLicenseValid() {
-    return true;
-    // Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
-    // if (!licenseOption.isDefined()) {
-    //  return false;
-    // }
-
-    // PluginLicense pluginLicense = licenseOption.get();
-    // return pluginLicense.isValid();
   }
 }

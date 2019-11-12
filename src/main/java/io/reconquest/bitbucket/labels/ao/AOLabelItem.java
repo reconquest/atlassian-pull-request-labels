@@ -10,24 +10,16 @@ import net.java.ao.schema.NotNull;
 import net.java.ao.schema.Table;
 
 @Preload("*")
-@Table("RqPrLabelItem")
-public interface LabelItem extends Entity {
+@Table("v2_label_item")
+public interface AOLabelItem extends Entity {
   @NotNull
-  Label getLabel();
-
-  @ManyToOne(fetch = FetchType.EAGER)
-  @JoinColumn(name = "LABEL_ID")
-  void setLabel(Label label);
+  int getLabelId();
 
   @NotNull
   int getProjectId();
 
-  void setProjectId(int projectId);
-
   @NotNull
   int getRepositoryId();
-
-  void setRepositoryId(int repositoryId);
 
   @NotNull
   long getPullRequestId();

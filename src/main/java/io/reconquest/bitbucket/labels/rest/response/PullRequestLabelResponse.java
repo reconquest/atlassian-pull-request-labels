@@ -2,9 +2,11 @@ package io.reconquest.bitbucket.labels.rest.response;
 
 import javax.xml.bind.annotation.XmlElement;
 
+import io.reconquest.bitbucket.labels.Label;
+
 public class PullRequestLabelResponse {
-  @XmlElement(name = "id")
-  private Integer id;
+  @XmlElement(name = "item_id")
+  private Integer itemId;
 
   @XmlElement(name = "label_id")
   private Integer labelId;
@@ -17,26 +19,10 @@ public class PullRequestLabelResponse {
 
   public PullRequestLabelResponse() {}
 
-  public PullRequestLabelResponse(Integer id, Integer labelId, String name, String color) {
-    this.id = id;
-    this.labelId = labelId;
-    this.name = name;
-    this.color = color;
-  }
-
-  public Integer getID() {
-    return this.id;
-  }
-
-  public Integer getLabelId() {
-    return this.labelId;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public void setColor(String color) {
-    this.color = color;
+  public PullRequestLabelResponse(Label label) {
+    this.itemId = label.getItemId();
+    this.labelId = label.getLabelId();
+    this.name = label.getName();
+    this.color = label.getColor();
   }
 }

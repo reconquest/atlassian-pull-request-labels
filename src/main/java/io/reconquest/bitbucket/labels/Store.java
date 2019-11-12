@@ -3,13 +3,15 @@ package io.reconquest.bitbucket.labels;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 
-import io.reconquest.bitbucket.labels.ao.Label;
-import io.reconquest.bitbucket.labels.ao.LabelItem;
+import io.reconquest.bitbucket.labels.ao.AOLabel;
+import io.reconquest.bitbucket.labels.ao.AOLabelItem;
 import net.java.ao.DBParam;
 import net.java.ao.Query;
 
@@ -21,67 +23,71 @@ public class Store {
     this.ao = ao;
   }
 
-  public LabelItem[] find(int projectId, int repositoryId, long pullRequestId) {
-    return this.ao.find(
-        LabelItem.class,
-        select(
-            "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND item.PULL_REQUEST_ID = ?",
-            projectId,
-            repositoryId,
-            pullRequestId));
+  private Label[] find(String clause, Object... params) {
+    AOLabelItem[] aoItems = this.ao.find(AOLabelItem.class, getJoinQuery(clause, params));
+
+    Set<Integer> setLabelIds = new HashSet<Integer>();
+    for (AOLabelItem item : aoItems) {
+      setLabelIds.add(item.getLabelId());
+    }
+
+    Integer[] labelIds = setLabelIds.toArray(new Integer[0]);
+    if (labelIds.length == 0) {
+      return Label.Factory.getLabels(aoItems, null);
+    }
+
+    String condition = conditionIn(labelIds);
+
+    AOLabel[] aoLabels = this.ao.find(
+        AOLabel.class, Query.select().from(AOLabel.class).where("ID in (" + condition + ")"));
+
+    return Label.Factory.getLabels(aoItems, aoLabels);
   }
 
-  private Query select(String clause, Object... params) {
-    return Query.select()
-        .from(LabelItem.class)
-        .alias(LabelItem.class, "item")
-        .join(Label.class, "label.ID = item.LABEL_ID")
-        .alias(Label.class, "label")
-        .where(clause, params);
+  public Label[] find(int projectId, int repositoryId, long pullRequestId) {
+    return this.find(
+        "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND item.PULL_REQUEST_ID = ?",
+        projectId,
+        repositoryId,
+        pullRequestId);
   }
 
-  public LabelItem[] find(int projectId, int repositoryId) {
-    return this.ao.find(
-        LabelItem.class,
-        select("item.PROJECT_ID = ? AND item.REPOSITORY_ID = ?", projectId, repositoryId));
+  public Label[] find(int projectId, int repositoryId) {
+    return this.find("item.PROJECT_ID = ? AND item.REPOSITORY_ID = ?", projectId, repositoryId);
   }
 
-  public LabelItem[] find(int projectId, int repositoryId, String name) {
-    return this.ao.find(
-        LabelItem.class,
-        select(
-            "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND label.NAME LIKE ?",
-            projectId,
-            repositoryId,
-            name));
+  public Label[] find(int projectId, int repositoryId, String name) {
+    return this.find(
+        "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND label.NAME LIKE ?",
+        projectId,
+        repositoryId,
+        name);
   }
 
-  public LabelItem[] find(int projectId, int repositoryId, long pullRequestId, String name) {
-    return this.ao.find(
-        LabelItem.class,
-        select(
-            "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND item.PULL_REQUEST_ID = ?"
-                + " AND label.NAME LIKE ?",
-            projectId,
-            repositoryId,
-            pullRequestId,
-            name));
+  public Label[] find(int projectId, int repositoryId, long pullRequestId, String name) {
+    return this.find(
+        "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND item.PULL_REQUEST_ID = ?"
+            + " AND label.NAME LIKE ?",
+        projectId,
+        repositoryId,
+        pullRequestId,
+        name);
   }
 
-  public LabelItem[] find(Integer[] repositories) {
+  public Label[] find(Integer[] repositories) {
     String[] ids = new String[repositories.length];
     for (int i = 0; i < repositories.length; i++) {
       ids[i] = String.valueOf(repositories[i]);
     }
 
     String query = String.join(",", ids);
-    return this.ao.find(LabelItem.class, select("item.REPOSITORY_ID IN (" + query + ")"));
+    return this.find("item.REPOSITORY_ID IN (" + query + ")");
   }
 
-  public Label createLabel(int projectId, int repositoryId, String name, String color) {
+  public AOLabel createAOLabel(int projectId, int repositoryId, String name, String color) {
     try {
-      Label label = this.ao.create(
-          Label.class,
+      AOLabel label = this.ao.create(
+          AOLabel.class,
           new DBParam("PROJECT_ID", projectId),
           new DBParam("REPOSITORY_ID", repositoryId),
           new DBParam("NAME", name),
@@ -89,8 +95,8 @@ public class Store {
           new DBParam("HASH", hash(projectId, repositoryId, name)));
       return label;
     } catch (Exception e) { // No way to handle duplicate hash
-      Label[] labels = this.ao.find(Label.class, Query.select()
-          .from(Label.class)
+      AOLabel[] labels = this.ao.find(AOLabel.class, Query.select()
+          .from(AOLabel.class)
           .where(
               "PROJECT_ID = ? AND REPOSITORY_ID = ? AND NAME = ?", projectId, repositoryId, name));
       if (labels.length == 0) {
@@ -102,26 +108,27 @@ public class Store {
     }
   }
 
-  public LabelItem createLabelItem(
-      int projectId, int repositoryId, long pullRequestId, Label label) {
+  public AOLabelItem createAOLabelItem(
+      int projectId, int repositoryId, long pullRequestId, AOLabel label) {
     return this.ao.create(
-        LabelItem.class,
+        AOLabelItem.class,
         new DBParam("LABEL_ID", label.getID()),
         new DBParam("PROJECT_ID", projectId),
         new DBParam("REPOSITORY_ID", repositoryId),
         new DBParam("PULL_REQUEST_ID", pullRequestId));
   }
 
-  public LabelItem create(
+  public Label create(
       int projectId, int repositoryId, long pullRequestId, String name, String color) {
-    Label label = createLabel(projectId, repositoryId, name, color);
-    return createLabelItem(projectId, repositoryId, pullRequestId, label);
+    AOLabel label = createAOLabel(projectId, repositoryId, name, color);
+    AOLabelItem item = createAOLabelItem(projectId, repositoryId, pullRequestId, label);
+    return Label.Factory.getLabel(item, label);
   }
 
   public void update(int projectId, int repositoryId, int labelId, String name, String color)
       throws Exception {
-    Label[] labels = this.ao.find(Label.class, Query.select()
-        .from(Label.class)
+    AOLabel[] labels = this.ao.find(AOLabel.class, Query.select()
+        .from(AOLabel.class)
         .where(
             "PROJECT_ID = ? AND REPOSITORY_ID = ? AND ID = ?", projectId, repositoryId, labelId));
     if (labels.length == 0) {
@@ -129,7 +136,7 @@ public class Store {
       return;
     }
 
-    Label label = labels[0];
+    AOLabel label = labels[0];
 
     label.setName(name);
     label.setColor(color);
@@ -138,15 +145,24 @@ public class Store {
     label.save();
   }
 
+  private Query getJoinQuery(String clause, Object... params) {
+    return Query.select()
+        .from(AOLabelItem.class)
+        .alias(AOLabelItem.class, "item")
+        .join(AOLabel.class, "label.ID = item.LABEL_ID")
+        .alias(AOLabel.class, "label")
+        .where(clause, params);
+  }
+
   public void flush() {
     ao.flush();
   }
 
-  public void delete(LabelItem[] labels) {
-    ao.delete(labels);
+  public void deleteItems(Label[] labels) {
+    ao.deleteWithSQL(AOLabelItem.class, "ID IN (" + conditionIn(getItemIds(labels)) + ")");
   }
 
-  public String hash(Label label) {
+  public String hash(AOLabel label) {
     return hash(label.getProjectId(), label.getRepositoryId(), label.getName());
   }
 
@@ -172,21 +188,20 @@ public class Store {
     return hexString.toString();
   }
 
-  // public LabelItem[] find(LabelItem[] items) {
-  //  if (items.length == 0) {
-  //    return null;
-  //  }
+  private Integer[] getItemIds(Label[] labels) {
+    Integer[] ids = new Integer[labels.length];
+    for (int i = 0; i < labels.length; i++) {
+      ids[i] = Integer.valueOf(labels[i].getItemId());
+    }
+    return ids;
+  }
 
-  //  return this.ao.find(Label.class, select("ID IN (" + ids(items) + ")"));
-  // }
+  private <T> String conditionIn(T[] items) {
+    String[] strings = new String[items.length];
+    for (int i = 0; i < items.length; i++) {
+      strings[i] = String.valueOf(items[i]);
+    }
 
-  // public String ids(LabelItem[] items) {
-  //  String[] strings = new String[items.length];
-  //  for (int i = 0; i < items.length; i++) {
-  //    strings[i] = String.valueOf(items[i].getID());
-  //  }
-
-  //  return String.join(",", strings);
-  // }
-
+    return String.join(",", strings);
+  }
 }
