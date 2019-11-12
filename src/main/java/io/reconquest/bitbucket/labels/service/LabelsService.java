@@ -32,8 +32,8 @@ public class LabelsService {
     Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
     root.setLevel(Level.DEBUG);
 
-    activeObjects.deleteWithSQL(AOLabel.class, "ID > ?", 0);
-    activeObjects.deleteWithSQL(AOLabelItem.class, "ID > ?", 0);
+    // activeObjects.deleteWithSQL(AOLabel.class, "ID > ?", 0);
+    // activeObjects.deleteWithSQL(AOLabelItem.class, "ID > ?", 0);
     //
     try {
       // store.create(1, 1, 1, "1_q", "#0000ff");
@@ -41,7 +41,7 @@ public class LabelsService {
       // store.create(1, 1, 2, "2_q", "#0000ff");
       // store.create(1, 1, 2, "2_w", "#00ffff");
 
-      store.create(1, 1, 2, "2_w", "#00ffff");
+      // store.create(1, 1, 2, "2_w", "#00ffff");
     } catch (Exception e) {
       System.err.printf("XXXXXXX LabelsService.java:31 e.getClass() %s \n", e.getClass());
     }
