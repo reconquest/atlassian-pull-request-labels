@@ -7,6 +7,9 @@ import org.slf4j.LoggerFactory;
 
 // import ch.qos.logback.classic.Logger;
 import io.reconquest.bitbucket.labels.Store;
+import io.reconquest.bitbucket.labels.StoreLegacy;
+import io.reconquest.bitbucket.labels.ao.LabelLegacy;
+import net.java.ao.EntityStreamCallback;
 
 public class LabelsService {
   private static Logger log = LoggerFactory.getLogger(LabelsService.class.getSimpleName());
@@ -14,89 +17,39 @@ public class LabelsService {
 
   private ActiveObjects activeObjects;
   private Store store;
+  private StoreLegacy storeLegacy;
 
   public LabelsService(ActiveObjects activeObjects) {
     this.activeObjects = activeObjects;
 
     this.store = new Store(activeObjects);
+    this.storeLegacy = new StoreLegacy(activeObjects);
   }
 
-  public void migrateLegacy() {}
-
   public void start() {
-    log.warn("LabelsService:start() invoked");
+    LegacyMigration migration = new LegacyMigration();
+    migration.migrate();
+  }
 
-    this.migrateLegacy();
+  private class LegacyMigration {
+    private String[] migrationColors = {
+      "#0033CC", "#428BCA", "#44AD8E", "#A8D695", "#5CB85C", "#69D100", "#004E00",
+      "#34495E", "#7F8C8D", "#A295D6", "#5843AD", "#8E44AD", "#FFECDB", "#AD4363",
+      "#D10069", "#CC0033", "#FF0000", "#D9534F", "#D1D100", "#F0AD4E", "#AD8D43"
+    };
 
-    // Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    // root.setLevel(Level.DEBUG);
-    // root.setLevel(Level.INFO);
+    public void migrate() {
+      activeObjects.stream(LabelLegacy.class, new EntityStreamCallback<LabelLegacy, Integer>() {
+        @Override
+        public void onRowRead(LabelLegacy label) {
+          migrateLabel(label);
+        }
+      });
+    }
 
-    // activeObjects.deleteWithSQL(AOLabel.class, "ID > ?", 0);
-    // activeObjects.deleteWithSQL(AOLabelItem.class, "ID > ?", 0);
-    //
-    // try {
-    //  // store.create(1, 1, 1, "1_q", "#0000ff");
-    //  // store.create(1, 1, 1, "1_w", "#00ffff");
-    //  // store.create(1, 1, 2, "2_q", "#0000ff");
-    //  // store.create(1, 1, 2, "2_w", "#00ffff");
-
-    //  // store.create(1, 1, 2, "2_w", "#00ffff");
-    // } catch (Exception e) {
-    //  System.err.printf("XXXXXXX LabelsService.java:31 e.getClass() %s \n", e.getClass());
-    // }
-
-    // Label[] items = store.find(1, 1);
-    // for (int i = 0; i < items.length; i++) {
-    //  Label item = items[i];
-
-    //  System.err.printf("XXXXXXX LabelsService.java:36 item.getLabelID() %s \n",
-    // item.getLabelId());
-
-    //  System.err.printf(
-    //      "XXXXXXX id: %s, p_id: %s, r_id: %s, l_id: %s, name: %s, color: %s \n",
-    //      item.getItemId(),
-    //      item.getProjectId(),
-    //      item.getRepositoryId(),
-    //      item.getLabelId(),
-    //      item.getName(),
-    //      item.getColor());
-    // }
-
-    // activeObjects.deleteWithSQL(PullRequestShadowToLabel.class, "ID > ?", 0);
-    // activeObjects.deleteWithSQL(PullRequestShadow.class, "ID > ?", 0);
-    // activeObjects.deleteWithSQL(Labez.class, "ID > ?", 0);
-
-    // store.create(100, 200, 301, "301_q", "#000000");
-    // store.create(100, 200, 302, "302_q", "#000000");
-    // store.create(100, 200, 301, "301_w", "#000000");
-    // store.create(100, 200, 302, "302_w", "#000000");
-
-    //// LabezItem[] results = store.find(100, 200, 301);
-    // Query query = Query.select()
-    //    .from(PullRequestShadow.class)
-    //    .alias(PullRequestShadow.class, "pr")
-    //    .alias(PullRequestShadowToLabel.class, "pr_to_label")
-    //    .alias(Labez.class, "labez")
-    //    .where("pr.PULL_REQUEST_ID = ?", 301);
-
-    // PullRequestShadow[] results = this.activeObjects.find(PullRequestShadow.class, query);
-    // System.err.printf("XXXXXXX LabelsService.java:64 results.length %s \n", results.length);
-
-    // for (int i = 0; i < results.length; i++) {
-    //  PullRequestShadow pr = results[i];
-    //  Labez[] labels = pr.getLabels();
-
-    //  System.err.printf(
-    //      "XXXXXXX LabelsService.java:56 pr.getPullRequestId() %s \n", pr.getPullRequestId());
-    //  System.err.printf("XXXXXXX LabelsService.java:57 labels %d\n", labels.length);
-
-    //  for (Labez labez : labels) {
-    //    System.err.printf("XXXXXXX LabelsService.java:51 labez.getName() %s \n", labez.getName());
-    //    System.err.printf("XXXXXXX LabelsService.java:51 labez.getColor() %s \n",
-    // labez.getColor());
-    //  }
-    // }
-
+    private void migrateLabel(LabelLegacy legacy) {
+      System.err.printf("XXXXXXX LabelsService.java:54 legacy %s \n", legacy);
+      //
+    }
   }
 }
