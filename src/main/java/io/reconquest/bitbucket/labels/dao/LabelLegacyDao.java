@@ -1,4 +1,4 @@
-package io.reconquest.bitbucket.labels;
+package io.reconquest.bitbucket.labels.dao;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 
@@ -6,10 +6,10 @@ import io.reconquest.bitbucket.labels.ao.LabelLegacy;
 import net.java.ao.DBParam;
 import net.java.ao.Query;
 
-public class StoreLegacy {
+public class LabelLegacyDao {
   private final ActiveObjects ao;
 
-  public StoreLegacy(ActiveObjects ao) {
+  public LabelLegacyDao(ActiveObjects ao) {
     this.ao = ao;
   }
 
@@ -64,16 +64,13 @@ public class StoreLegacy {
             name));
   }
 
-  public void create(
-      int projectId, int repositoryId, long pullRequestId, String name, String color) {
+  public void create(int projectId, int repositoryId, long pullRequestId, String name) {
     this.ao.create(
         LabelLegacy.class,
         new DBParam("PROJECT_ID", projectId),
         new DBParam("REPOSITORY_ID", repositoryId),
         new DBParam("PULL_REQUEST_ID", pullRequestId),
-        new DBParam("NAME", name)
-        // new DBParam("COLOR", color)
-        );
+        new DBParam("NAME", name));
   }
 
   public void flush() {

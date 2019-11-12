@@ -48,7 +48,7 @@ import com.atlassian.upm.api.license.PluginLicenseManager;
 
 import io.reconquest.bitbucket.labels.Label;
 import io.reconquest.bitbucket.labels.LicenseValidator;
-import io.reconquest.bitbucket.labels.Store;
+import io.reconquest.bitbucket.labels.dao.LabelDao;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsListResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsMapResponse;
@@ -67,7 +67,7 @@ public class PullRequestLabels {
 
   @ComponentImport private final AuthenticationContext authContext;
 
-  private final Store store;
+  private final LabelDao dao;
   private final LicenseValidator licenseValidator;
 
   @Inject
@@ -86,7 +86,7 @@ public class PullRequestLabels {
     this.avatarService = checkNotNull(avatarService);
     this.authContext = checkNotNull(authContext);
 
-    this.store = new Store(checkNotNull(ao));
+    this.dao = new LabelDao(checkNotNull(ao));
   }
 
   @GET
@@ -116,7 +116,7 @@ public class PullRequestLabels {
     }
 
     return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(
-            store.find(project.getId(), repository.getId(), pullRequest.getId()))))
+            dao.find(project.getId(), repository.getId(), pullRequest.getId()))))
         .build();
   }
 
@@ -140,7 +140,7 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final Label[] items = store.find(project.getId(), repository.getId());
+    final Label[] items = dao.find(project.getId(), repository.getId());
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
@@ -195,7 +195,7 @@ public class PullRequestLabels {
     }
 
     // TODO: support search by multiple labels
-    final Label[] items = store.find(project.getId(), repository.getId(), labelName);
+    final Label[] items = dao.find(project.getId(), repository.getId(), labelName);
 
     HashMap<Long, HashSet<String>> map = new HashMap<Long, HashSet<String>>();
     for (Label item : items) {
@@ -341,7 +341,7 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final Label[] items = store.find(project.getId(), repository.getId());
+    final Label[] items = dao.find(project.getId(), repository.getId());
 
     return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(items))).build();
   }
@@ -364,7 +364,7 @@ public class PullRequestLabels {
       }
     }
 
-    final Label[] items = store.find(repositories.toArray(new Integer[0]));
+    final Label[] items = dao.find(repositories.toArray(new Integer[0]));
 
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
@@ -407,8 +407,8 @@ public class PullRequestLabels {
     }
 
     try {
-      store.update(project.getId(), repository.getId(), labelId, name, color);
-      store.flush();
+      dao.update(project.getId(), repository.getId(), labelId, name, color);
+      dao.flush();
 
       return Response.ok().build();
     } catch (Exception e) {
@@ -449,17 +449,15 @@ public class PullRequestLabels {
     // duplicates
     //
     // we also need to ignore them in order to save back compatibility
-    final Label[] found =
-        store.find(project.getId(), repository.getId(), pullRequest.getId(), name);
+    final Label[] found = dao.find(project.getId(), repository.getId(), pullRequest.getId(), name);
 
     if (found.length > 0) {
       return Response.ok(new PullRequestLabelsSaveResponse(found[0].getLabelId())).build();
     }
 
-    int created =
-        store.create(project.getId(), repository.getId(), pullRequest.getId(), name, color);
+    int created = dao.create(project.getId(), repository.getId(), pullRequest.getId(), name, color);
 
-    store.flush();
+    dao.flush();
 
     return Response.ok(new PullRequestLabelsSaveResponse(created)).build();
   }
@@ -492,12 +490,11 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final Label[] items =
-        store.find(project.getId(), repository.getId(), pullRequest.getId(), name);
+    final Label[] items = dao.find(project.getId(), repository.getId(), pullRequest.getId(), name);
 
     if (items.length > 0) {
-      store.deleteItems(items);
-      store.flush();
+      dao.deleteItems(items);
+      dao.flush();
     }
 
     return Response.ok().build();

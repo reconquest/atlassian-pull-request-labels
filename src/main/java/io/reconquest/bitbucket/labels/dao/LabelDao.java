@@ -1,4 +1,4 @@
-package io.reconquest.bitbucket.labels;
+package io.reconquest.bitbucket.labels.dao;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -10,16 +10,17 @@ import java.util.logging.Logger;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 
+import io.reconquest.bitbucket.labels.Label;
 import io.reconquest.bitbucket.labels.ao.AOLabel;
 import io.reconquest.bitbucket.labels.ao.AOLabelItem;
 import net.java.ao.DBParam;
 import net.java.ao.Query;
 
-public class Store {
+public class LabelDao {
   private final ActiveObjects ao;
-  private static Logger log = Logger.getLogger(Store.class.getSimpleName());
+  private static Logger log = Logger.getLogger(LabelDao.class.getSimpleName());
 
-  public Store(ActiveObjects ao) {
+  public LabelDao(ActiveObjects ao) {
     this.ao = ao;
   }
 
@@ -110,12 +111,30 @@ public class Store {
 
   public AOLabelItem createAOLabelItem(
       int projectId, int repositoryId, long pullRequestId, AOLabel label) {
-    return this.ao.create(
-        AOLabelItem.class,
-        new DBParam("LABEL_ID", label.getID()),
-        new DBParam("PROJECT_ID", projectId),
-        new DBParam("REPOSITORY_ID", repositoryId),
-        new DBParam("PULL_REQUEST_ID", pullRequestId));
+    try {
+      return this.ao.create(
+          AOLabelItem.class,
+          new DBParam("LABEL_ID", label.getID()),
+          new DBParam("PROJECT_ID", projectId),
+          new DBParam("REPOSITORY_ID", repositoryId),
+          new DBParam("PULL_REQUEST_ID", pullRequestId),
+          new DBParam("HASH", hash(projectId, repositoryId, pullRequestId, label.getID())));
+    } catch (Exception e) { // No way to handle duplicate hash
+      AOLabelItem[] items = this.ao.find(AOLabelItem.class, Query.select()
+          .from(AOLabelItem.class)
+          .where(
+              "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ? AND LABEL_ID = ?",
+              projectId,
+              repositoryId,
+              pullRequestId,
+              label.getID()));
+      if (items.length == 0) {
+        // throw what we have if we can't find the same label
+        throw e;
+      }
+
+      return items[0];
+    }
   }
 
   public int create(
@@ -162,20 +181,32 @@ public class Store {
     ao.deleteWithSQL(AOLabelItem.class, "ID IN (" + conditionIn(getItemIds(labels)) + ")");
   }
 
-  public String hash(AOLabel label) {
-    return hash(label.getProjectId(), label.getRepositoryId(), label.getName());
+  // public String hash(AOLabel label) {
+  //  return hash(label.getProjectId(), label.getRepositoryId(), label.getName());
+  // }
+
+  private String hash(Object... objects) {
+    String[] strings = new String[objects.length];
+    for (int i = 0; i < objects.length; i++) {
+      strings[i] = String.valueOf(objects[i]);
+    }
+
+    return hash(strings);
   }
 
-  private String hash(int projectId, int repositoryId, String name) {
-    String token = String.valueOf(projectId) + "@" + String.valueOf(repositoryId) + "@" + name;
+  private String hash(String... strings) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] encoded = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+      byte[] encoded = digest.digest(String.join("@", strings).getBytes(StandardCharsets.UTF_8));
       return bytesToHex(encoded);
     } catch (NoSuchAlgorithmException e) {
       log.log(Level.SEVERE, "unable to encode label hash", e);
       return "";
     }
+  }
+
+  private String hash(int projectId, int repositoryId, String name) {
+    return hash(String.valueOf(projectId), String.valueOf(repositoryId), name);
   }
 
   private String bytesToHex(byte[] hash) {
