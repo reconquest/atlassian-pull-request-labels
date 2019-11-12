@@ -10,7 +10,7 @@ import net.java.ao.schema.NotNull;
 import net.java.ao.schema.Table;
 
 @Preload("*")
-@Table("v2_label_item")
+@Table("v2items")
 public interface AOLabelItem extends Entity {
   @NotNull
   int getLabelId();

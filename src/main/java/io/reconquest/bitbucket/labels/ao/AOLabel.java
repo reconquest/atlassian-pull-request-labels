@@ -8,7 +8,7 @@ import net.java.ao.schema.Table;
 import net.java.ao.schema.Unique;
 
 @Preload("*")
-@Table("v2_label")
+@Table("v2labels")
 public interface AOLabel extends Entity {
   @NotNull
   String getName();
