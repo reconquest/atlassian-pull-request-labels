@@ -23,7 +23,8 @@
 }
 
 body[data-aui-version^="5"] .rq-labels-side-panel .rq-labels-button-edit,
-body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
+body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit,
+body[data-aui-version^="7.6"] .rq-labels-side-panel .rq-labels-button-edit {
     margin-top: 0px;
 }
 
@@ -76,6 +77,10 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
     top: -1px;
 }
 
+body[data-aui-version^="7.6"] .rq-labels-icon-tag {
+    top: 2px;
+}
+
 .rq-labels-icon-invalid-license {
     margin-left: 5px;
 }
@@ -94,7 +99,7 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
     right: 0px;
 }
 
-.rq-labels-select {
+.rq-labels-side-panel .rq-labels-select {
     width: 100%;
 }
 
