@@ -45,13 +45,9 @@
 
     <ao key="ao-module">
         <description>The module configuring the Active Objects service used by this plugin</description>
-        <entity>io.reconquest.bitbucket.labels.ao.Label</entity>
-        <entity>io.reconquest.bitbucket.labels.ao.LabelItem</entity>
+        <entity>io.reconquest.bitbucket.labels.ao.AOLabel</entity>
+        <entity>io.reconquest.bitbucket.labels.ao.AOLabelItem</entity>
         <entity>io.reconquest.bitbucket.labels.ao.LabelLegacy</entity>
-
-        <entity>io.reconquest.bitbucket.labels.ao.Labez</entity>
-        <entity>io.reconquest.bitbucket.labels.ao.PullRequestShadow</entity>
-        <entity>io.reconquest.bitbucket.labels.ao.PullRequestShadowToLabel</entity>
     </ao>
 
     <component key="LabelsServiceLauncher"

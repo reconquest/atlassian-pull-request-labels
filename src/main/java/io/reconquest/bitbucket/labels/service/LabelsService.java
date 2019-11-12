@@ -8,6 +8,8 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import io.reconquest.bitbucket.labels.Label;
 import io.reconquest.bitbucket.labels.Store;
+import io.reconquest.bitbucket.labels.ao.AOLabel;
+import io.reconquest.bitbucket.labels.ao.AOLabelItem;
 
 public class LabelsService {
   public static String PLUGIN_KEY = "io.reconquest.bitbucket.labels";
@@ -30,32 +32,36 @@ public class LabelsService {
     Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
     root.setLevel(Level.DEBUG);
 
+    activeObjects.deleteWithSQL(AOLabel.class, "ID > ?", 0);
+    activeObjects.deleteWithSQL(AOLabelItem.class, "ID > ?", 0);
+    //
     try {
-      store.create(1, 1, 1, "1_q", "#0000ff");
-      store.create(1, 1, 1, "1_w", "#00ffff");
-      store.create(1, 1, 2, "2_q", "#0000ff");
-      store.create(1, 1, 2, "2_w", "#00ffff");
+      // store.create(1, 1, 1, "1_q", "#0000ff");
+      // store.create(1, 1, 1, "1_w", "#00ffff");
+      // store.create(1, 1, 2, "2_q", "#0000ff");
+      // store.create(1, 1, 2, "2_w", "#00ffff");
 
       store.create(1, 1, 2, "2_w", "#00ffff");
     } catch (Exception e) {
       System.err.printf("XXXXXXX LabelsService.java:31 e.getClass() %s \n", e.getClass());
     }
 
-    Label[] items = store.find(1, 1);
-    for (int i = 0; i < items.length; i++) {
-      Label item = items[i];
+    // Label[] items = store.find(1, 1);
+    // for (int i = 0; i < items.length; i++) {
+    //  Label item = items[i];
 
-      System.err.printf("XXXXXXX LabelsService.java:36 item.getLabelID() %s \n", item.getLabelId());
+    //  System.err.printf("XXXXXXX LabelsService.java:36 item.getLabelID() %s \n",
+    // item.getLabelId());
 
-      System.err.printf(
-          "XXXXXXX id: %s, p_id: %s, r_id: %s, l_id: %s, name: %s, color: %s \n",
-          item.getItemId(),
-          item.getProjectId(),
-          item.getRepositoryId(),
-          item.getLabelId(),
-          item.getName(),
-          item.getColor());
-    }
+    //  System.err.printf(
+    //      "XXXXXXX id: %s, p_id: %s, r_id: %s, l_id: %s, name: %s, color: %s \n",
+    //      item.getItemId(),
+    //      item.getProjectId(),
+    //      item.getRepositoryId(),
+    //      item.getLabelId(),
+    //      item.getName(),
+    //      item.getColor());
+    // }
 
     root.setLevel(Level.INFO);
 

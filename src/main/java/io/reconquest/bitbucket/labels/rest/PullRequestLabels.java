@@ -459,12 +459,12 @@ public class PullRequestLabels {
       return Response.ok(new PullRequestLabelsSaveResponse(found[0].getLabelId())).build();
     }
 
-    final Label created =
+    int created =
         store.create(project.getId(), repository.getId(), pullRequest.getId(), name, color);
 
     store.flush();
 
-    return Response.ok(new PullRequestLabelsSaveResponse(created.getItemId())).build();
+    return Response.ok(new PullRequestLabelsSaveResponse(created)).build();
   }
 
   @DELETE

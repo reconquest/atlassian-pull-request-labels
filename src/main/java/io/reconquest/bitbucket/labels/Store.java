@@ -118,11 +118,11 @@ public class Store {
         new DBParam("PULL_REQUEST_ID", pullRequestId));
   }
 
-  public Label create(
+  public int create(
       int projectId, int repositoryId, long pullRequestId, String name, String color) {
     AOLabel label = createAOLabel(projectId, repositoryId, name, color);
     AOLabelItem item = createAOLabelItem(projectId, repositoryId, pullRequestId, label);
-    return Label.Factory.getLabel(item, label);
+    return item.getID();
   }
 
   public void update(int projectId, int repositoryId, int labelId, String name, String color)

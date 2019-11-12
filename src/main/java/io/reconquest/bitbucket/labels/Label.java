@@ -75,7 +75,7 @@ public class Label {
   public static class Factory {
     public static Label getLabel(AOLabelItem aoItem, AOLabel aoLabel) {
       Label label = new Label();
-      label.setItemId(aoItem.getProjectId());
+      label.setItemId(aoItem.getID());
       label.setProjectId(aoItem.getProjectId());
       label.setRepositoryId(aoItem.getRepositoryId());
       label.setPullRequestId(aoItem.getPullRequestId());

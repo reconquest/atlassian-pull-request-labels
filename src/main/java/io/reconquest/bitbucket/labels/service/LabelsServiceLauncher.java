@@ -68,7 +68,6 @@ public class LabelsServiceLauncher implements LifecycleAware, InitializingBean, 
    */
   @EventListener
   public void onPluginEnabled(PluginEnabledEvent event) {
-    System.err.printf("XXXXXXX %s \n", event.getPlugin().getKey());
     if (LabelsService.PLUGIN_KEY.equals(event.getPlugin().getKey())) {
       onLifecycleEvent(LifecycleEvent.PLUGIN_ENABLED);
     }
@@ -76,9 +75,7 @@ public class LabelsServiceLauncher implements LifecycleAware, InitializingBean, 
 
   @EventListener
   public void onPluginModuleEnabled(PluginModuleEnabledEvent event) {
-    System.err.printf(
-        "XXXXXXX LabelsServiceLauncher.java:77 event.getModule() %s \n",
-        event.getModule().getKey());
+    // nope
   }
 
   /**
@@ -97,8 +94,6 @@ public class LabelsServiceLauncher implements LifecycleAware, InitializingBean, 
    * call {@code launch()}.
    */
   private void onLifecycleEvent(LifecycleEvent event) {
-    System.err.printf(
-        "XXXXXXX LabelsServiceLauncher.java:91 event.toString() %s \n", event.toString());
     if (logger.isInfoEnabled()) {
       logger.info("onLifecycleEvent: " + event);
     }
@@ -133,11 +128,6 @@ public class LabelsServiceLauncher implements LifecycleAware, InitializingBean, 
   private void launch() throws Exception {
     logger.info("starting initialisation");
 
-    try {
-      Thread.sleep(100);
-    } catch (Exception e) {
-      //
-    }
     initActiveObjects();
 
     service.start();
