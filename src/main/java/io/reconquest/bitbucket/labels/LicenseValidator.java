@@ -1,25 +1,34 @@
 package io.reconquest.bitbucket.labels;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
 import com.atlassian.plugin.util.ClassLoaderUtils;
-import com.google.common.base.Charsets;
+import com.atlassian.upm.api.license.PluginLicenseManager;
+import com.atlassian.upm.api.license.entity.PluginLicense;
+import com.atlassian.upm.api.util.Option;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.reconquest.bitbucket.labels.service.LabelsService;
+
 public class LicenseValidator {
+  private static Logger log = LoggerFactory.getLogger(LicenseValidator.class.getSimpleName());
+  private PluginLicenseManager pluginLicenseManager;
+  private boolean licenseSignatureVerified = false;
+
   private static final String PUBLIC_KEY = ""
       + "MIIDRjCCAjkGByqGSM44BAEwggIsAoIBAQCXNVVR/55M+fXGU6GmpW6RmSIIxi+V\n"
       + "65651FSMztGZYUAcLKpVBopXLB+SZamNDsXbMVklog/umUa5mKRUQjZD2dXrgLrt\n"
@@ -39,24 +48,55 @@ public class LicenseValidator {
       + "QE35aoGYg6d4kIOtIvlxopIVyXPhEqGcvoP5RNWsn/PwGaq8rgiFa92RjX4Xd9Xc\n"
       + "ZJXFZ3lnW1fqyDe7KIaTZw3sGrBZ/4IhpvnvGHVxBYz1rBahL3KpYt1b6E6N65t4\n"
       + "2nOMzOgp6Glhr++St20VeNwfwV2PTN5Je80=";
-  private static Logger log = LoggerFactory.getLogger(LicenseValidator.class.getSimpleName());
-  private Signature dsa;
 
-  public LicenseValidator() {
+  public LicenseValidator(PluginLicenseManager pluginLicenseManager) {
+    this.pluginLicenseManager = pluginLicenseManager;
+    this.initLicense();
+  }
+
+  private void initLicense() {
+    Signature dsa;
     try {
-      dsa = Signature.getInstance("DSA");
+      dsa = Signature.getInstance("SHA256withDSA");
     } catch (NoSuchAlgorithmException e) {
       log.error("Unable to init Signature verifier", e);
+      return;
     }
 
-    String license = getResource("license");
+    String encodedLicense = getResource(LabelsService.PLUGIN_KEY + ".license");
+    if (encodedLicense == null || encodedLicense.isEmpty()) {
+      return;
+    }
 
+    DSAPublicKey key;
     try {
-      PublicKey key = getPublicKey();
-
-      System.err.printf("XXXXXXX LicenseValidator.java:56 key %s \n", key);
+      key = getPublicKey();
     } catch (IOException | GeneralSecurityException e) {
       log.error("Unable to decode public dsa key", e);
+      return;
+    }
+
+    try {
+      dsa.initVerify(key);
+    } catch (InvalidKeyException e) {
+      log.error("unable to init dsa verifier", e);
+      return;
+    }
+
+    License license = new License(encodedLicense);
+
+    try {
+      dsa.update(license.getData());
+      licenseSignatureVerified = dsa.verify(license.getSignature());
+    } catch (SignatureException e) {
+      log.error("invalid license", e);
+      return;
+    }
+
+    if (licenseSignatureVerified) {
+      log.warn("license signature verified");
+    } else {
+      log.warn("license signature is invalid");
     }
   }
 
@@ -73,36 +113,58 @@ public class LicenseValidator {
       return null;
     }
 
-    StringBuilder stringBuilder = new StringBuilder();
-    String line = null;
-
     try {
-      BufferedReader bufferedReader =
-          new BufferedReader(new InputStreamReader(resource, Charsets.UTF_8));
-      while ((line = bufferedReader.readLine()) != null) {
-        stringBuilder.append(line).append("\n");
-      }
-
-      return stringBuilder.toString();
+      String result = IOUtils.toString(resource, StandardCharsets.UTF_8);
+      return result;
     } catch (IOException e) {
+      log.warn("unable to read license file", e);
       return null;
     }
   }
 
   public boolean isDefined() {
-    return true;
-    // Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
-    // return licenseOption.isDefined();
+    if (licenseSignatureVerified) {
+      return true;
+    }
+    Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
+    return licenseOption.isDefined();
   }
 
   public boolean isValid() {
-    return true;
-    // Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
-    // if (!licenseOption.isDefined()) {
-    //  return false;
-    // }
+    if (licenseSignatureVerified) {
+      return true;
+    }
 
-    // PluginLicense pluginLicense = licenseOption.get();
-    // return pluginLicense.isValid();
+    Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
+    if (!licenseOption.isDefined()) {
+      return false;
+    }
+
+    PluginLicense pluginLicense = licenseOption.get();
+    return pluginLicense.isValid();
+  }
+
+  private class License {
+    private byte[] signature;
+    private byte[] data;
+
+    public License(String encoded) {
+      String[] chunks = encoded.split(" ", 2);
+      if (chunks.length != 2) {
+        log.warn("invalid license format");
+        return;
+      }
+
+      this.signature = Base64.decodeBase64(chunks[0]);
+      this.data = Base64.decodeBase64(chunks[1]);
+    }
+
+    public byte[] getSignature() {
+      return this.signature;
+    }
+
+    public byte[] getData() {
+      return this.data;
+    }
   }
 }

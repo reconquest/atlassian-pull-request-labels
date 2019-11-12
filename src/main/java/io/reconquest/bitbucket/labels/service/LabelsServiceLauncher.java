@@ -53,7 +53,6 @@ public class LabelsServiceLauncher implements LifecycleAware, InitializingBean, 
    */
   @Override
   public void onStart() {
-    System.err.printf("XXXXXXX LabelsServiceLauncher.java:52 onstart \n");
     onLifecycleEvent(LifecycleEvent.LIFECYCLE_AWARE_ON_START);
   }
 
@@ -126,13 +125,9 @@ public class LabelsServiceLauncher implements LifecycleAware, InitializingBean, 
 
   /** Do all the things we can't do before the system is fully up. */
   private void launch() throws Exception {
-    logger.info("starting initialisation");
-
     initActiveObjects();
 
     service.start();
-
-    logger.info("finished initialisation");
   }
 
   private void registerListener() {

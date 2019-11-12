@@ -4,3 +4,4 @@
 /.settings
 /.classpath
 /bin
+src/main/resources/*.license

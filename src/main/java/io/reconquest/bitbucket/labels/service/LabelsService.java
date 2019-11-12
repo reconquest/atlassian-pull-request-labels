@@ -2,16 +2,14 @@ package io.reconquest.bitbucket.labels.service;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import io.reconquest.bitbucket.labels.Label;
+// import ch.qos.logback.classic.Logger;
 import io.reconquest.bitbucket.labels.Store;
-import io.reconquest.bitbucket.labels.ao.AOLabel;
-import io.reconquest.bitbucket.labels.ao.AOLabelItem;
 
 public class LabelsService {
+  private static Logger log = LoggerFactory.getLogger(LabelsService.class.getSimpleName());
   public static String PLUGIN_KEY = "io.reconquest.bitbucket.labels";
 
   private ActiveObjects activeObjects;
@@ -23,28 +21,30 @@ public class LabelsService {
     this.store = new Store(activeObjects);
   }
 
+  public void migrateLegacy() {}
+
   public void start() {
-    System.err.printf("XXXXXXX LabelsService.java:60 start() invoked \n");
+    log.warn("LabelsService:start() invoked");
 
-    // LicenseValidator validator = new LicenseValidator();
-    // System.err.printf("XXXXXXX LabelsService.java:27 validator %s \n", validator);
+    this.migrateLegacy();
 
-    Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    root.setLevel(Level.DEBUG);
+    // Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+    // root.setLevel(Level.DEBUG);
+    // root.setLevel(Level.INFO);
 
     // activeObjects.deleteWithSQL(AOLabel.class, "ID > ?", 0);
     // activeObjects.deleteWithSQL(AOLabelItem.class, "ID > ?", 0);
     //
-    try {
-      // store.create(1, 1, 1, "1_q", "#0000ff");
-      // store.create(1, 1, 1, "1_w", "#00ffff");
-      // store.create(1, 1, 2, "2_q", "#0000ff");
-      // store.create(1, 1, 2, "2_w", "#00ffff");
+    // try {
+    //  // store.create(1, 1, 1, "1_q", "#0000ff");
+    //  // store.create(1, 1, 1, "1_w", "#00ffff");
+    //  // store.create(1, 1, 2, "2_q", "#0000ff");
+    //  // store.create(1, 1, 2, "2_w", "#00ffff");
 
-      // store.create(1, 1, 2, "2_w", "#00ffff");
-    } catch (Exception e) {
-      System.err.printf("XXXXXXX LabelsService.java:31 e.getClass() %s \n", e.getClass());
-    }
+    //  // store.create(1, 1, 2, "2_w", "#00ffff");
+    // } catch (Exception e) {
+    //  System.err.printf("XXXXXXX LabelsService.java:31 e.getClass() %s \n", e.getClass());
+    // }
 
     // Label[] items = store.find(1, 1);
     // for (int i = 0; i < items.length; i++) {
@@ -62,8 +62,6 @@ public class LabelsService {
     //      item.getName(),
     //      item.getColor());
     // }
-
-    root.setLevel(Level.INFO);
 
     // activeObjects.deleteWithSQL(PullRequestShadowToLabel.class, "ID > ?", 0);
     // activeObjects.deleteWithSQL(PullRequestShadow.class, "ID > ?", 0);

@@ -57,8 +57,6 @@ import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsSaveRespons
 @Path("/")
 @Scanned
 public class PullRequestLabels {
-  @ComponentImport private final PluginLicenseManager pluginLicenseManager;
-
   @ComponentImport private final RepositoryService repositoryService;
 
   @ComponentImport private final PullRequestService pullRequestService;
@@ -70,19 +68,18 @@ public class PullRequestLabels {
   @ComponentImport private final AuthenticationContext authContext;
 
   private final Store store;
-  private final LicenseValidator licenseValidator = new LicenseValidator();
+  private final LicenseValidator licenseValidator;
 
   @Inject
   public PullRequestLabels(
       @ComponentImport ActiveObjects ao,
-      PluginLicenseManager pluginLicenseManager,
+      @ComponentImport PluginLicenseManager pluginLicenseManager,
       RepositoryService repositoryService,
       PullRequestService pullRequestService,
       ProjectService projectService,
       AvatarService avatarService,
       AuthenticationContext authContext) {
-
-    this.pluginLicenseManager = pluginLicenseManager;
+    this.licenseValidator = new LicenseValidator(pluginLicenseManager);
     this.repositoryService = checkNotNull(repositoryService);
     this.pullRequestService = checkNotNull(pullRequestService);
     this.projectService = checkNotNull(projectService);
