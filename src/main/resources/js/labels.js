@@ -97,9 +97,12 @@
         return this;
     }
 
-    var InvalidLicenseMessage =
-        'License for Labels Add-on is missing or expired. ' +
-        'Visit "Manage Apps" page in your Bitbucket instance for more info.';
+    var InvalidLicenseNagbar = function () {
+        return new Nagbar(
+            'License for Pull Request Labels Add-on is missing or expired. ' +
+            'Visit "Manage Apps" page in your Bitbucket instance for more info.'
+        );
+    }
 
     var ViewNotApplicable = function () {
         this.mount = function () {
@@ -131,7 +134,10 @@
         },
 
         Luminance: function (rgb) {
-            return rgb.r*0.299 + rgb.g*0.587 + rgb.b*0.114;
+            // https://stackoverflow.com/a/24213274
+            return Math.sqrt(
+                0.299 * rgb.r*rgb.r + 0.587 * rgb.g * rgb.g + 0.114 * rgb.b * rgb.b
+            );
         },
 
         IsBright: function(rgb) {
@@ -262,14 +268,6 @@
         return this._$;
     }
 
-    var LabelsCellUnlicensed = function(labels) {
-        this._$ = $('<td class="rq-labels-table-row"/>');
-
-        this._$.append(new IconInvalidLicense());
-
-        return this._$;
-    }
-
     var Spinner = function(options) {
         var options = Options(options, {
             size: 'small'
@@ -341,7 +339,7 @@
                     }
 
                     return item.name.startsWith(term)
-                })
+                });
 
                 // push hit first
                 if (hit) {
@@ -349,7 +347,7 @@
                 }
 
                 $.each(matches, function(_, item) {
-                    if (hit && hit.id == item.id) {
+                    if (hit && hit.id == item.id || item.disabled) {
                         return;
                     }
 
@@ -361,7 +359,6 @@
                         data.push({
                             id: '',
                             name: term,
-                            newly: true
                         });
                     }
                 }
@@ -395,7 +392,6 @@
                 return {
                     id: '',
                     name: term,
-                    newly: true
                 };
             }
         }
@@ -454,7 +450,7 @@
             alignment: "left top"
         });
 
-        this._$template = $('<aui-inline-dialog>')
+        this._$template = $(new AJS.InlineDialog2())
             .attr('id', id)
             .attr('alignment', options.alignment);
 
@@ -478,7 +474,9 @@
 
                 this._$ = this._$template
                     .clone()
-                    .append(body)
+                    .find('div')
+                        .append(body)
+                    .end()
                     .appendTo('body');
 
                 this._$anchor = $(anchor);
@@ -488,6 +486,18 @@
                 this._$.attr('open', true);
             }.bind(this)
         });
+    }
+
+    var Nagbar = function (body) {
+        this._body = body;
+
+        this.show = function () {
+            require(['aui/banner'], function (banner) {
+                banner({ body: this._body });
+            }.bind(this));
+        }
+
+        return this;
     }
 
     //
@@ -621,13 +631,6 @@
         return Icon('devtools-tag', {classes: 'rq-labels-icon-tag'});
     }
 
-    var IconInvalidLicense = function() {
-        return Icon(
-            'warning',
-            {classes: 'rq-labels-icon-invalid-license'}
-        ).attr('title', InvalidLicenseMessage);
-    }
-
     var ButtonIconEdit = function() {
         return ButtonIcon('edit', {classes: 'rq-labels-button-edit'});
     }
@@ -639,10 +642,17 @@
                     return null;
                 }
 
-                return $('<span/>').append(
+                if (item.disabled) {
+                    return $('<div class="already-set"/>').append(
+                        new IconTag(),
+                        item.name + ' is already assigned.'
+                    );
+                }
+
+                return $('<div/>').append(
                     new IconTag(),
                     new Label(item),
-                    item.newly ? '(new)' : ''
+                    item.id ? '' : '(new)'
                 )
             },
             css: {
@@ -668,8 +678,7 @@
             query: function(_) { return [] },
             add: function(_) {},
             remove: function(_) {},
-            update: function(_) {},
-            licensed: true
+            update: function(_) {}
         });
 
         this._colorPicker = new LabelColorPicker();
@@ -677,40 +686,19 @@
         this._labels = {};
 
         this._query = function (term) {
-            return options.query(term)
-        }
+            var labels = options.query(term);
 
-        this.create = function (candidate) {
-            var exists = false;
             $.each(
-                this._labels,
-                function (_, label) {
-                    if (label.name == candidate.name) {
-                        exists = true;
-                    }
+                labels,
+                function (i, label) {
+                    labels[i].disabled = label.id in this._labels;
                 }.bind(this)
             );
 
-            if (exists) {
-                this._select.close();
-                this._select.empty();
+            return labels;
+        }
 
-                var $label = this._select.itemize({
-                    name: candidate.name
-                });
-
-                var $content = $('<span/>').
-                    append($label).
-                    append("already set.");
-
-                this._$messages.exist.
-                    html($content).
-                    show().
-                    fadeout();
-
-                return;
-            }
-
+        this.create = function (candidate) {
             this._select.disable();
             this._spinner.show();
 
@@ -718,7 +706,7 @@
                 options.add(candidate)
             ).done(
                 function (response) {
-                    candidate.label_id = response.label_id;
+                    candidate.id = response.id;
 
                     this.label(candidate);
                     this._spinner.hide();
@@ -744,7 +732,7 @@
         this.label = function (label) {
             var panel = this;
 
-            this._labels[label.label_id] = label;
+            this._labels[label.id] = label;
 
             this._$labels.append(
                 new Label(label, {
@@ -760,8 +748,8 @@
                                 options.update(label);
                             }.bind(this);
 
-                            var cancel = function (originalColor) {
-                                return function() { select(originalColor); }
+                            var cancel = function (color) {
+                                return function() { select(color); }
                             }(label.color);
 
                             panel._colorPicker.bind(
@@ -783,8 +771,8 @@
                             $.when(
                                 options.remove(label)
                             ).done(function () {
-                                this.remove();
                                 delete panel._labels[label.id];
+                                this.remove();
                                 panel._spinner.hide();
                             }.bind(this));
                         }
@@ -810,19 +798,12 @@
             'Labels'
         )
 
-        this._warning = null;
-        if (options.licensed) {
-            this._header.append(
-                new ButtonIconEdit().
-                click(
-                    function() { this.edit() }.bind(this)
-                )
+        this._header.append(
+            new ButtonIconEdit().
+            click(
+                function() { this.edit() }.bind(this)
             )
-        } else {
-            this._header.append(new IconInvalidLicense());
-
-            this._warning = $('<i/>').text(InvalidLicenseMessage);
-        }
+        )
 
         this._$form = $('<form class="rq-labels-edit-form"/>').
             submit(function() { return false }).
@@ -844,10 +825,6 @@
             this._$help,
             this._$messages
         );
-
-        if (this._warning) {
-            this._$.append(this._warning);
-        }
 
         return $.extend(this._$, this);
     }
@@ -878,18 +855,6 @@
         return this;
     }
 
-    var LabelsCellProviderStaticUnlicensed = function (labels) {
-        this._cells = {};
-
-        this.provide = function (id, callback) {
-            this._cells[id] = this._cells[id] || new LabelsCellUnlicensed()
-
-            callback(this._cells[id])
-        }
-
-        return this;
-    }
-
     var LabelsCellProviderDynamic = function (selector, api) {
         // Main idea of Dynamic Provider is to collect all PR/Repository ID on
         // the page, retrieve data from backend for given repos, store it in
@@ -903,7 +868,6 @@
         this._cells = {};
 
         this._updating = false;
-        this._licensed = true;
         this._callbacks = [];
 
         this._findIdentifiers = function () {
@@ -946,8 +910,6 @@
             )
             .fail(function (e) {
                 if (e.status == 401) {
-                    this._licensed = false;
-
                     this._invokeCallbacks();
                 } else {
                     throw e;
@@ -956,11 +918,7 @@
         }
 
         this._newLabelCell = function (labels) {
-            if (this._licensed) {
-                return new LabelsCell(labels);
-            } else {
-                return new LabelsCellUnlicensed(labels);
-            }
+            return new LabelsCell(labels);
         }
 
         this._callback = function(id, fn) {
@@ -1219,14 +1177,6 @@
             this._table.content.mount(this._$)
         }
 
-        this._renderUnlicensed = function () {
-            this._table = new PullRequestTable(
-                new LabelsCellProviderStaticUnlicensed()
-            )
-
-            this._table.mount(this._$)
-        }
-
         this.mount = function() {
             $.when(
                 api.getByRepository(
@@ -1248,7 +1198,7 @@
             )
             .fail(function (e) {
                 if (e.status == 401) {
-                    this._renderUnlicensed();
+                    new InvalidLicenseNagbar().show();
                 } else {
                     throw e;
                 }
@@ -1266,10 +1216,11 @@
             return new ViewNotApplicable();
         }
 
-        this._initPanel = function (licensed) {
+        this._render = function(labels, mapping) {
+            this._labels = labels;
+
             this._panel = new LabelsPanel({
                 allowNew: true,
-                licensed: licensed,
 
                 query: function (_) {
                     return this._labels;
@@ -1283,15 +1234,18 @@
                         }
                     })
 
-                    if (!found) {
-                        this._labels.push(candidate);
-                    }
-
                     return api.addLabel(
                         context.getProjectKey(),
                         context.getRepositorySlug(),
                         context.getPullRequestID(),
                         candidate
+                    ).done(
+                        function(response) {
+                            if (!found) {
+                                candidate.id = response.id;
+                                this._labels.push(candidate);
+                            }
+                        }.bind(this)
                     );
                 }.bind(this),
 
@@ -1312,12 +1266,6 @@
                     );
                 }.bind(this)
             });
-        }
-
-        this._render = function(labels, mapping) {
-            this._initPanel(true);
-
-            this._labels = labels;
 
             $.each(
                 mapping,
@@ -1326,11 +1274,6 @@
                 }.bind(this)
             );
 
-            this._$.append(this._panel);
-        }
-
-        this._renderUnlicensed = function() {
-            this._initPanel(false);
             this._$.append(this._panel);
         }
 
@@ -1356,7 +1299,7 @@
             )
             .fail(function (e) {
                 if (e.status == 401) {
-                    this._renderUnlicensed();
+                    new InvalidLicenseNagbar().show();
                 } else {
                     throw e;
                 }
@@ -1476,7 +1419,7 @@
 
         this.updateLabel = function(project, repo, label) {
             return $.ajax(
-                this.urls.update(project, repo, label.label_id),
+                this.urls.update(project, repo, label.id),
                 {
                     data: {name: label.name, color: label.color},
                     method: "PUT",
@@ -1563,7 +1506,7 @@
         var context = new Context();
 
         var api = new API(
-            AJS.contextPath() != "/"? AJS.contextPath() : ""
+            AJS.contextPath() != "/" ? AJS.contextPath() : ""
         );
 
         $.each(views, function (_, view) {

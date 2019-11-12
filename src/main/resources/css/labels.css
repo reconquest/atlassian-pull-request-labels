@@ -1,5 +1,7 @@
 .rq-label {
+    display: inline-block;
     margin-bottom: 5px;
+    line-height: 1.3;
 }
 
 .rq-labels-table-header {
@@ -26,7 +28,7 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
 }
 
 .rq-labels-side-panel .rq-labels-edit-form {
-    margin-top: 15px;
+    margin-top: 10px;
     display: none;
 }
 
@@ -84,16 +86,16 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
     display: block;
     text-indent: 0;
     position: absolute;
-    top: -1px;
+    top: -4px;
     right: 0px;
+}
+
+.rq-labels-select {
+    width: 100%;
 }
 
 .aui-dropdown2.aui-style-default.rq-labels-select-dropdown {
     padding: 0;
-}
-
-.rq-label {
-    display: inline;
 }
 
 .rq-labels-select-dropdown .select2-search {
@@ -105,6 +107,17 @@ body[data-aui-version^="6.0"] .rq-labels-side-panel .rq-labels-button-edit {
 
 .rq-labels-select.aui-select2-container.select2-container .select2-choice .select2-chosen {
     overflow: visible;
+}
+
+.rq-labels-select-dropdown.aui-select2-drop .select2-results .select2-result-label {
+    padding: 5px 0 0 7px;
+}
+
+.rq-labels-select-dropdown .already-set {
+    margin-bottom: 5px;
+    word-wrap: break-word !important;
+    line-height: 1.5;
+    font-size: 12px;
 }
 
 .rq-labels-side-panel-tip {

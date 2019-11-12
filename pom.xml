@@ -232,5 +232,6 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <ao.version>3.1.7</ao.version>
         <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
+        <reconquest.labels.js>labels.js</reconquest.labels.js>
     </properties>
 </project>

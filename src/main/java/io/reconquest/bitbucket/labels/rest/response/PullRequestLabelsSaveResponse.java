@@ -5,7 +5,7 @@ import javax.xml.bind.annotation.*;
 @XmlRootElement(name = "label_id")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class PullRequestLabelsSaveResponse {
-  @XmlElement(name = "label_id")
+  @XmlElement(name = "id")
   private int id;
 
   public PullRequestLabelsSaveResponse() {}
