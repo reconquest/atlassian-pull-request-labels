@@ -28,7 +28,6 @@ public class LabelsServiceLauncher implements LifecycleAware, InitializingBean, 
   private final Set<LifecycleEvent> lifecycleEvents = EnumSet.noneOf(LifecycleEvent.class);
 
   public LabelsServiceLauncher(final EventPublisher eventPublisher, final ActiveObjects ao) {
-    System.err.printf("XXXXXXX LabelsServiceLauncher.java:30 constructor \n");
     this.eventPublisher = eventPublisher;
     this.ao = ao;
 
@@ -58,7 +57,7 @@ public class LabelsServiceLauncher implements LifecycleAware, InitializingBean, 
 
   @Override
   public void onStop() {
-    System.err.printf("XXXXXXX LabelsServiceLauncher.java:58 onstop \n");
+    //
   }
 
   /**

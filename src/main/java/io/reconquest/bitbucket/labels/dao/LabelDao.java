@@ -5,10 +5,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.reconquest.bitbucket.labels.Label;
 import io.reconquest.bitbucket.labels.ao.LabelEntity;
@@ -18,7 +19,7 @@ import net.java.ao.Query;
 
 public class LabelDao {
   private final ActiveObjects ao;
-  private static Logger log = Logger.getLogger(LabelDao.class.getSimpleName());
+  private static Logger log = LoggerFactory.getLogger(LabelDao.class.getSimpleName());
 
   public LabelDao(ActiveObjects ao) {
     this.ao = ao;
@@ -40,7 +41,8 @@ public class LabelDao {
     String condition = conditionIn(labelIds);
 
     LabelEntity[] aoLabels = this.ao.find(
-        LabelEntity.class, Query.select().from(LabelEntity.class).where("ID in (" + condition + ")"));
+        LabelEntity.class,
+        Query.select().from(LabelEntity.class).where("ID in (" + condition + ")"));
 
     return Label.Factory.getLabels(aoItems, aoLabels);
   }
@@ -151,7 +153,7 @@ public class LabelDao {
         .where(
             "PROJECT_ID = ? AND REPOSITORY_ID = ? AND ID = ?", projectId, repositoryId, labelId));
     if (labels.length == 0) {
-      log.warning("no labels found with such conditions");
+      log.warn("no labels found with such conditions");
       return;
     }
 
@@ -200,7 +202,7 @@ public class LabelDao {
       byte[] encoded = digest.digest(String.join("@", strings).getBytes(StandardCharsets.UTF_8));
       return bytesToHex(encoded);
     } catch (NoSuchAlgorithmException e) {
-      log.log(Level.SEVERE, "unable to encode label hash", e);
+      log.error("unable to encode label hash", e);
       return "";
     }
   }

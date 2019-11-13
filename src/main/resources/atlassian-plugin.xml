@@ -49,6 +49,7 @@
         <entity>io.reconquest.bitbucket.labels.ao.LabelEntity</entity>
         <entity>io.reconquest.bitbucket.labels.ao.LabelItem</entity>
         <entity>io.reconquest.bitbucket.labels.ao.LabelLegacy</entity>
+        <entity>io.reconquest.bitbucket.labels.ao.Migration</entity>
     </ao>
 
     <component key="LabelsServiceLauncher"
