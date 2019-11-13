@@ -2,8 +2,8 @@ package io.reconquest.bitbucket.labels;
 
 import java.util.HashMap;
 
-import io.reconquest.bitbucket.labels.ao.AOLabel;
-import io.reconquest.bitbucket.labels.ao.AOLabelItem;
+import io.reconquest.bitbucket.labels.ao.LabelEntity;
+import io.reconquest.bitbucket.labels.ao.LabelItem;
 
 public class Label {
   private int itemId;
@@ -73,7 +73,7 @@ public class Label {
   }
 
   public static class Factory {
-    public static Label getLabel(AOLabelItem aoItem, AOLabel aoLabel) {
+    public static Label getLabel(LabelItem aoItem, LabelEntity aoLabel) {
       Label label = new Label();
       label.setItemId(aoItem.getID());
       label.setProjectId(aoItem.getProjectId());
@@ -87,12 +87,12 @@ public class Label {
       return label;
     }
 
-    public static Label[] getLabels(AOLabelItem[] aoItems, AOLabel[] aoLabels) {
+    public static Label[] getLabels(LabelItem[] aoItems, LabelEntity[] aoLabels) {
       Label[] labels = new Label[aoItems.length];
 
-      HashMap<Integer, AOLabel> aoLabelsMap = new HashMap<Integer, AOLabel>();
+      HashMap<Integer, LabelEntity> aoLabelsMap = new HashMap<Integer, LabelEntity>();
       if (aoLabels != null) {
-        for (AOLabel label : aoLabels) {
+        for (LabelEntity label : aoLabels) {
           aoLabelsMap.put(Integer.valueOf(label.getID()), label);
         }
       }

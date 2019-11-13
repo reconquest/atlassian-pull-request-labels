@@ -7,20 +7,25 @@ import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Table;
 import net.java.ao.schema.Unique;
 
-@Preload({"LABEL_ID", "PROJECT_ID", "REPOSITORY_ID", "PULL_REQUEST_ID"})
-@Table("v5items")
-public interface AOLabelItem extends Entity {
+@Preload({"NAME", "COLOR", "PROJECT_ID", "REPOSITORY_ID", "HASH"})
+@Table("v5labels")
+public interface LabelEntity extends Entity {
   @NotNull
-  int getLabelId();
+  String getName();
+
+  @StringLength(250)
+  void setName(String name);
+
+  String getColor();
+
+  @StringLength(250)
+  void setColor(String color);
 
   @NotNull
   int getProjectId();
 
   @NotNull
   int getRepositoryId();
-
-  @NotNull
-  long getPullRequestId();
 
   @NotNull
   @Unique

@@ -5,8 +5,8 @@ import com.atlassian.activeobjects.external.ActiveObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.reconquest.bitbucket.labels.ao.AOLabel;
-import io.reconquest.bitbucket.labels.ao.AOLabelItem;
+import io.reconquest.bitbucket.labels.ao.LabelEntity;
+import io.reconquest.bitbucket.labels.ao.LabelItem;
 import io.reconquest.bitbucket.labels.ao.LabelLegacy;
 import io.reconquest.bitbucket.labels.dao.LabelDao;
 import io.reconquest.bitbucket.labels.dao.LabelLegacyDao;
@@ -67,8 +67,8 @@ public class LabelsService {
         }
       });
 
-      int items = activeObjects.count(AOLabelItem.class);
-      int labels = activeObjects.count(AOLabel.class);
+      int items = activeObjects.count(LabelItem.class);
+      int labels = activeObjects.count(LabelEntity.class);
 
       log.warn("{} labels migrated to {} label-items and {} label-entities", total, items, labels);
     }

@@ -11,8 +11,8 @@ import java.util.logging.Logger;
 import com.atlassian.activeobjects.external.ActiveObjects;
 
 import io.reconquest.bitbucket.labels.Label;
-import io.reconquest.bitbucket.labels.ao.AOLabel;
-import io.reconquest.bitbucket.labels.ao.AOLabelItem;
+import io.reconquest.bitbucket.labels.ao.LabelEntity;
+import io.reconquest.bitbucket.labels.ao.LabelItem;
 import net.java.ao.DBParam;
 import net.java.ao.Query;
 
@@ -25,10 +25,10 @@ public class LabelDao {
   }
 
   private Label[] find(String clause, Object... params) {
-    AOLabelItem[] aoItems = this.ao.find(AOLabelItem.class, getJoinQuery(clause, params));
+    LabelItem[] aoItems = this.ao.find(LabelItem.class, getJoinQuery(clause, params));
 
     Set<Integer> setLabelIds = new HashSet<Integer>();
-    for (AOLabelItem item : aoItems) {
+    for (LabelItem item : aoItems) {
       setLabelIds.add(item.getLabelId());
     }
 
@@ -39,8 +39,8 @@ public class LabelDao {
 
     String condition = conditionIn(labelIds);
 
-    AOLabel[] aoLabels = this.ao.find(
-        AOLabel.class, Query.select().from(AOLabel.class).where("ID in (" + condition + ")"));
+    LabelEntity[] aoLabels = this.ao.find(
+        LabelEntity.class, Query.select().from(LabelEntity.class).where("ID in (" + condition + ")"));
 
     return Label.Factory.getLabels(aoItems, aoLabels);
   }
@@ -85,10 +85,10 @@ public class LabelDao {
     return this.find("item.REPOSITORY_ID IN (" + query + ")");
   }
 
-  public AOLabel createAOLabel(int projectId, int repositoryId, String name, String color) {
+  public LabelEntity createLabelEntity(int projectId, int repositoryId, String name, String color) {
     try {
-      AOLabel label = this.ao.create(
-          AOLabel.class,
+      LabelEntity label = this.ao.create(
+          LabelEntity.class,
           new DBParam("PROJECT_ID", projectId),
           new DBParam("REPOSITORY_ID", repositoryId),
           new DBParam("NAME", name),
@@ -96,8 +96,8 @@ public class LabelDao {
           new DBParam("HASH", hash(projectId, repositoryId, name)));
       return label;
     } catch (Exception e) { // No way to handle duplicate hash
-      AOLabel[] labels = this.ao.find(AOLabel.class, Query.select()
-          .from(AOLabel.class)
+      LabelEntity[] labels = this.ao.find(LabelEntity.class, Query.select()
+          .from(LabelEntity.class)
           .where(
               "PROJECT_ID = ? AND REPOSITORY_ID = ? AND NAME = ?", projectId, repositoryId, name));
       if (labels.length == 0) {
@@ -109,19 +109,19 @@ public class LabelDao {
     }
   }
 
-  public AOLabelItem createAOLabelItem(
-      int projectId, int repositoryId, long pullRequestId, AOLabel label) {
+  public LabelItem createLabelItem(
+      int projectId, int repositoryId, long pullRequestId, LabelEntity label) {
     try {
       return this.ao.create(
-          AOLabelItem.class,
+          LabelItem.class,
           new DBParam("LABEL_ID", label.getID()),
           new DBParam("PROJECT_ID", projectId),
           new DBParam("REPOSITORY_ID", repositoryId),
           new DBParam("PULL_REQUEST_ID", pullRequestId),
           new DBParam("HASH", hash(projectId, repositoryId, pullRequestId, label.getID())));
     } catch (Exception e) { // No way to handle duplicate hash
-      AOLabelItem[] items = this.ao.find(AOLabelItem.class, Query.select()
-          .from(AOLabelItem.class)
+      LabelItem[] items = this.ao.find(LabelItem.class, Query.select()
+          .from(LabelItem.class)
           .where(
               "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ? AND LABEL_ID = ?",
               projectId,
@@ -139,15 +139,15 @@ public class LabelDao {
 
   public int create(
       int projectId, int repositoryId, long pullRequestId, String name, String color) {
-    AOLabel label = createAOLabel(projectId, repositoryId, name, color);
-    AOLabelItem item = createAOLabelItem(projectId, repositoryId, pullRequestId, label);
+    LabelEntity label = createLabelEntity(projectId, repositoryId, name, color);
+    LabelItem item = createLabelItem(projectId, repositoryId, pullRequestId, label);
     return item.getID();
   }
 
   public void update(int projectId, int repositoryId, int labelId, String name, String color)
       throws Exception {
-    AOLabel[] labels = this.ao.find(AOLabel.class, Query.select()
-        .from(AOLabel.class)
+    LabelEntity[] labels = this.ao.find(LabelEntity.class, Query.select()
+        .from(LabelEntity.class)
         .where(
             "PROJECT_ID = ? AND REPOSITORY_ID = ? AND ID = ?", projectId, repositoryId, labelId));
     if (labels.length == 0) {
@@ -155,7 +155,7 @@ public class LabelDao {
       return;
     }
 
-    AOLabel label = labels[0];
+    LabelEntity label = labels[0];
 
     label.setName(name);
     label.setColor(color);
@@ -166,10 +166,10 @@ public class LabelDao {
 
   private Query getJoinQuery(String clause, Object... params) {
     return Query.select()
-        .from(AOLabelItem.class)
-        .alias(AOLabelItem.class, "item")
-        .join(AOLabel.class, "label.ID = item.LABEL_ID")
-        .alias(AOLabel.class, "label")
+        .from(LabelItem.class)
+        .alias(LabelItem.class, "item")
+        .join(LabelEntity.class, "label.ID = item.LABEL_ID")
+        .alias(LabelEntity.class, "label")
         .where(clause, params);
   }
 
@@ -178,10 +178,10 @@ public class LabelDao {
   }
 
   public void deleteItems(Label[] labels) {
-    ao.deleteWithSQL(AOLabelItem.class, "ID IN (" + conditionIn(getItemIds(labels)) + ")");
+    ao.deleteWithSQL(LabelItem.class, "ID IN (" + conditionIn(getItemIds(labels)) + ")");
   }
 
-  // public String hash(AOLabel label) {
+  // public String hash(LabelEntity label) {
   //  return hash(label.getProjectId(), label.getRepositoryId(), label.getName());
   // }
 
