@@ -27,9 +27,9 @@
         </transformation>
 
         <!-- Run following command to use AJAX loader for dev:
-             atlas-package -Dreconquest.labels.js=labels-loader.js
+             atlas-package -Dreconquest.batch.js=batch-loader.js
         -->
-        <resource name="labels.js" type="download" location="js/${reconquest.labels.js}"/>
+        <resource name="batch.js" type="download" location="js/${reconquest.batch.js}"/>
 
         <resource name="labels.css" type="download" location="css/labels.css"/>
         <resource name="labels.soy.js" type="download" location="/soy/labels.soy"/>

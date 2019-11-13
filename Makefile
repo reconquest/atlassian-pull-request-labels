@@ -3,3 +3,6 @@ package:
 
 nginx:
 	sudo nginx -c $(shell readlink -f nginx.conf) -g 'daemon off;'
+
+batchjs:
+	@./buildutils/batchjs

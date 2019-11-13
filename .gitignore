@@ -6,3 +6,4 @@
 /.classpath
 /bin
 src/main/resources/*.license
+/src/main/resources/js/batch.js

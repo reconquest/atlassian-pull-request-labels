@@ -16,9 +16,9 @@ public class MigrationLabelsV5 {
 
   public static String MIGRATION_KEY = "labels-to-v5";
   private String[] colors = {
-    "#0033CC", "#428BCA", "#44AD8E", "#A8D695", "#5CB85C", "#69D100", "#004E00",
-    "#34495E", "#7F8C8D", "#A295D6", "#5843AD", "#8E44AD", "#FFECDB", "#AD4363",
-    "#D10069", "#CC0033", "#FF0000", "#D9534F", "#D1D100", "#F0AD4E", "#AD8D43"
+    "#69D100", "#FFECDB", "#A295D6", "#5CB85C", "#A8D695", "#CC0033", "#8E44AD",
+    "#D9534F", "#428BCA", "#AD8D43", "#34495E", "#D10069", "#FF0000", "#F0AD4E",
+    "#AD4363", "#7F8C8D", "#0033CC", "#44AD8E", "#5843AD", "#004E00", "#D1D100"
   };
 
   private ActiveObjects ao;
