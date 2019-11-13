@@ -5,7 +5,6 @@ import java.util.Set;
 
 import javax.annotation.concurrent.GuardedBy;
 
-import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.plugin.event.events.PluginEnabledEvent;
@@ -17,17 +16,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
+import net.java.ao.EntityManager;
+
 public class LabelsServiceLauncher implements LifecycleAware, InitializingBean, DisposableBean {
   private static final Logger logger = LoggerFactory.getLogger(LabelsServiceLauncher.class);
 
   private final EventPublisher eventPublisher;
-  private final ActiveObjects ao;
+  private final EntityManager ao;
   private final LabelsService service;
 
   @GuardedBy("this")
   private final Set<LifecycleEvent> lifecycleEvents = EnumSet.noneOf(LifecycleEvent.class);
 
-  public LabelsServiceLauncher(final EventPublisher eventPublisher, final ActiveObjects ao) {
+  public LabelsServiceLauncher(final EventPublisher eventPublisher, final EntityManager ao) {
     this.eventPublisher = eventPublisher;
     this.ao = ao;
 
@@ -124,7 +125,7 @@ public class LabelsServiceLauncher implements LifecycleAware, InitializingBean, 
 
   /** Do all the things we can't do before the system is fully up. */
   private void launch() throws Exception {
-    initActiveObjects();
+    initEntityManager();
 
     service.start();
   }
@@ -147,9 +148,10 @@ public class LabelsServiceLauncher implements LifecycleAware, InitializingBean, 
    * happen might not be deterministic. Explicitly prodding AO here makes the system more
    * deterministic and therefore easier to troubleshooting.
    */
-  private void initActiveObjects() {
-    logger.debug("initialise ActiveObjects");
-    ao.flushAll();
+  private void initEntityManager() {
+    logger.debug("initialise EntityManager");
+    // disabled because we use EntityManager
+    // ao.flushAll();
   }
 
   /**

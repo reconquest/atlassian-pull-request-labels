@@ -2,6 +2,7 @@ package io.reconquest.bitbucket.labels.rest;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,7 +22,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.bitbucket.auth.AuthenticationContext;
 import com.atlassian.bitbucket.avatar.AvatarRequest;
 import com.atlassian.bitbucket.avatar.AvatarService;
@@ -53,6 +53,7 @@ import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsListResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsMapResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsSaveResponse;
+import net.java.ao.EntityManager;
 
 @Path("/")
 @Scanned
@@ -72,13 +73,14 @@ public class PullRequestLabels {
 
   @Inject
   public PullRequestLabels(
-      @ComponentImport ActiveObjects ao,
+      @ComponentImport EntityManager ao,
       @ComponentImport PluginLicenseManager pluginLicenseManager,
       RepositoryService repositoryService,
       PullRequestService pullRequestService,
       ProjectService projectService,
       AvatarService avatarService,
-      AuthenticationContext authContext) {
+      AuthenticationContext authContext)
+      throws SQLException {
     this.licenseValidator = new LicenseValidator(pluginLicenseManager);
     this.repositoryService = checkNotNull(repositoryService);
     this.pullRequestService = checkNotNull(pullRequestService);
@@ -95,7 +97,8 @@ public class PullRequestLabels {
   public Response listByPullRequest(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug,
-      @PathParam("pull_request_id") Long pullRequestId) {
+      @PathParam("pull_request_id") Long pullRequestId)
+      throws SQLException {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
@@ -125,7 +128,8 @@ public class PullRequestLabels {
   @Path("/{project_slug}/{repository_slug}/pull-requests/")
   public Response listByRepositoryHash(
       @PathParam("project_slug") String projectSlug,
-      @PathParam("repository_slug") String repositorySlug) {
+      @PathParam("repository_slug") String repositorySlug)
+      throws SQLException {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
@@ -171,7 +175,8 @@ public class PullRequestLabels {
       @QueryParam("author") String author,
       @QueryParam("is_reviewer") Boolean isReviewer,
       @QueryParam("start") Integer start,
-      @QueryParam("limit") Integer limit) {
+      @QueryParam("limit") Integer limit)
+      throws SQLException {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
@@ -326,7 +331,8 @@ public class PullRequestLabels {
   @Path("/{project_slug}/{repository_slug}/")
   public Response listByRepository(
       @PathParam("project_slug") String projectSlug,
-      @PathParam("repository_slug") String repositorySlug) {
+      @PathParam("repository_slug") String repositorySlug)
+      throws SQLException {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
@@ -349,7 +355,7 @@ public class PullRequestLabels {
   @POST
   @Produces({MediaType.APPLICATION_JSON})
   @Path("/list")
-  public Response list(@FormParam("repository_id") List<Integer> repositories) {
+  public Response list(@FormParam("repository_id") List<Integer> repositories) throws SQLException {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
@@ -391,7 +397,8 @@ public class PullRequestLabels {
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("label_id") int labelId,
       @FormParam("name") String name,
-      @FormParam("color") String color) {
+      @FormParam("color") String color)
+      throws SQLException {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
@@ -425,7 +432,8 @@ public class PullRequestLabels {
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId,
       @FormParam("name") String name,
-      @FormParam("color") String color) {
+      @FormParam("color") String color)
+      throws SQLException {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
@@ -470,7 +478,8 @@ public class PullRequestLabels {
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId,
-      @FormParam("name") String name) {
+      @FormParam("name") String name)
+      throws SQLException {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
