@@ -111,7 +111,7 @@ public class LabelDao {
       // color and will try to create label, we need to behave like there were
       // no such label before so we update color.
       LabelEntity found = labels[0];
-      if (!found.getColor().equals(color)) {
+      if (found.getColor() == null || !found.getColor().equals(color)) {
         found.setColor(color);
         found.save();
       }
