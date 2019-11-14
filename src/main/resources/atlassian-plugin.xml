@@ -58,6 +58,4 @@
         <description>Controls the initialisation logic of the Pull Request Labels</description>
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
-
-    <component-import key="activeObjects" interface="com.atlassian.activeobjects.external.EntityManager"/>
 </atlassian-plugin>
