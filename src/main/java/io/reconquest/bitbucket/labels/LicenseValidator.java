@@ -1,7 +1,8 @@
 package io.reconquest.bitbucket.labels;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -12,7 +13,8 @@ import java.security.SignatureException;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
-import com.atlassian.plugin.util.ClassLoaderUtils;
+import com.atlassian.bitbucket.cluster.ClusterService;
+import com.atlassian.bitbucket.server.StorageService;
 import com.atlassian.upm.api.license.PluginLicenseManager;
 import com.atlassian.upm.api.license.entity.PluginLicense;
 import com.atlassian.upm.api.util.Option;
@@ -22,11 +24,12 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.reconquest.bitbucket.labels.service.LabelsService;
-
 public class LicenseValidator {
   private static Logger log = LoggerFactory.getLogger(LicenseValidator.class.getSimpleName());
   private PluginLicenseManager pluginLicenseManager;
+  private StorageService storageService;
+  private ClusterService clusterService;
+  private String pluginKey;
   private boolean licenseSignatureVerified = false;
 
   private static final String PUBLIC_KEY = ""
@@ -49,23 +52,40 @@ public class LicenseValidator {
       + "ZJXFZ3lnW1fqyDe7KIaTZw3sGrBZ/4IhpvnvGHVxBYz1rBahL3KpYt1b6E6N65t4\n"
       + "2nOMzOgp6Glhr++St20VeNwfwV2PTN5Je80=";
 
-  public LicenseValidator(PluginLicenseManager pluginLicenseManager) {
+  public LicenseValidator(
+      String pluginKey,
+      PluginLicenseManager pluginLicenseManager,
+      StorageService storageService,
+      ClusterService clusterService) {
+    this.pluginKey = pluginKey;
     this.pluginLicenseManager = pluginLicenseManager;
+    this.storageService = storageService;
+    this.clusterService = clusterService;
+
     this.initLicense();
   }
 
   private void initLicense() {
+    licenseSignatureVerified = verifyLicense();
+    if (licenseSignatureVerified) {
+      log.warn("license signature verified");
+    } else {
+      log.warn("license signature is invalid");
+    }
+  }
+
+  public boolean verifyLicense() {
     Signature dsa;
     try {
       dsa = Signature.getInstance("SHA256withDSA");
     } catch (NoSuchAlgorithmException e) {
       log.error("Unable to init Signature verifier", e);
-      return;
+      return false;
     }
 
-    String encodedLicense = getResource(LabelsService.PLUGIN_KEY + ".license");
+    String encodedLicense = readPluginLicense();
     if (encodedLicense == null || encodedLicense.isEmpty()) {
-      return;
+      return false;
     }
 
     DSAPublicKey key;
@@ -73,30 +93,43 @@ public class LicenseValidator {
       key = getPublicKey();
     } catch (IOException | GeneralSecurityException e) {
       log.error("Unable to decode public dsa key", e);
-      return;
+      return false;
     }
 
     try {
       dsa.initVerify(key);
     } catch (InvalidKeyException e) {
       log.error("unable to init dsa verifier", e);
-      return;
+      return false;
     }
 
     License license = new License(encodedLicense);
 
+    boolean verified;
     try {
       dsa.update(license.getData());
-      licenseSignatureVerified = dsa.verify(license.getSignature());
+      verified = dsa.verify(license.getSignature());
     } catch (SignatureException e) {
       log.error("invalid license", e);
-      return;
+      return false;
     }
 
-    if (licenseSignatureVerified) {
-      log.warn("license signature verified");
-    } else {
-      log.warn("license signature is invalid");
+    return verified;
+  }
+
+  public String readPluginLicense() {
+    File homeDir = getHomeDir();
+    File license = new File(homeDir.getAbsolutePath(), pluginKey + ".license");
+    if (!license.exists()) {
+      return null;
+    }
+
+    try {
+      String result = IOUtils.toString(new FileInputStream(license), StandardCharsets.UTF_8);
+      return result;
+    } catch (IOException e) {
+      log.warn("unable to read license file", e);
+      return null;
     }
   }
 
@@ -107,18 +140,11 @@ public class LicenseValidator {
     return pubKey;
   }
 
-  private String getResource(String name) {
-    InputStream resource = ClassLoaderUtils.getResourceAsStream(name, this.getClass());
-    if (resource == null) {
-      return null;
-    }
-
-    try {
-      String result = IOUtils.toString(resource, StandardCharsets.UTF_8);
-      return result;
-    } catch (IOException e) {
-      log.warn("unable to read license file", e);
-      return null;
+  private File getHomeDir() {
+    if (this.clusterService.isAvailable()) {
+      return this.storageService.getSharedHomeDir().toFile();
+    } else {
+      return this.storageService.getHomeDir().toFile();
     }
   }
 

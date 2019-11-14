@@ -13,7 +13,6 @@
     </plugin-info>
 
     <resource type="i18n" name="i18n" location="${project.groupId}.${project.artifactId}"/>
-    <resource type="template" name="/io.reconquest.bitbucket.labels.license" location="/io.reconquest.bitbucket.labels.license" />
 
     <web-resource name="Resources" key="resources">
         <transformation extension="soy">

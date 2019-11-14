@@ -25,6 +25,7 @@ import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.bitbucket.auth.AuthenticationContext;
 import com.atlassian.bitbucket.avatar.AvatarRequest;
 import com.atlassian.bitbucket.avatar.AvatarService;
+import com.atlassian.bitbucket.cluster.ClusterService;
 import com.atlassian.bitbucket.project.Project;
 import com.atlassian.bitbucket.project.ProjectService;
 import com.atlassian.bitbucket.pull.PullRequest;
@@ -38,6 +39,7 @@ import com.atlassian.bitbucket.repository.RepositoryService;
 import com.atlassian.bitbucket.rest.pull.RestPullRequest;
 import com.atlassian.bitbucket.rest.pull.RestPullRequestParticipant;
 import com.atlassian.bitbucket.rest.util.RestPage;
+import com.atlassian.bitbucket.server.StorageService;
 import com.atlassian.bitbucket.util.Page;
 import com.atlassian.bitbucket.util.PageImpl;
 import com.atlassian.bitbucket.util.PageRequest;
@@ -53,19 +55,16 @@ import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsListResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsMapResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsSaveResponse;
+import io.reconquest.bitbucket.labels.service.LabelsService;
 
 @Path("/")
 @Scanned
 public class PullRequestLabels {
-  @ComponentImport private final RepositoryService repositoryService;
-
-  @ComponentImport private final PullRequestService pullRequestService;
-
-  @ComponentImport private final ProjectService projectService;
-
-  @ComponentImport private final AvatarService avatarService;
-
-  @ComponentImport private final AuthenticationContext authContext;
+  private final RepositoryService repositoryService;
+  private final PullRequestService pullRequestService;
+  private final ProjectService projectService;
+  private final AvatarService avatarService;
+  private final AuthenticationContext authContext;
 
   private final LabelDao dao;
   private final LicenseValidator licenseValidator;
@@ -74,12 +73,15 @@ public class PullRequestLabels {
   public PullRequestLabels(
       @ComponentImport ActiveObjects ao,
       @ComponentImport PluginLicenseManager pluginLicenseManager,
-      RepositoryService repositoryService,
-      PullRequestService pullRequestService,
-      ProjectService projectService,
-      AvatarService avatarService,
-      AuthenticationContext authContext) {
-    this.licenseValidator = new LicenseValidator(pluginLicenseManager);
+      @ComponentImport StorageService storageService,
+      @ComponentImport ClusterService clusterService,
+      @ComponentImport RepositoryService repositoryService,
+      @ComponentImport PullRequestService pullRequestService,
+      @ComponentImport ProjectService projectService,
+      @ComponentImport AvatarService avatarService,
+      @ComponentImport AuthenticationContext authContext) {
+    this.licenseValidator = new LicenseValidator(
+        LabelsService.PLUGIN_KEY, pluginLicenseManager, storageService, clusterService);
     this.repositoryService = checkNotNull(repositoryService);
     this.pullRequestService = checkNotNull(pullRequestService);
     this.projectService = checkNotNull(projectService);
