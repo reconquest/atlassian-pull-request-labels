@@ -129,6 +129,10 @@ var ViewPullRequestDetails = function (context, api) {
                     }
                 })
 
+                if (!found) {
+                    candidate.color = WellKnownColors.Random();
+                }
+
                 return api.addLabel(
                     context.getProjectKey(),
                     context.getRepositorySlug(),

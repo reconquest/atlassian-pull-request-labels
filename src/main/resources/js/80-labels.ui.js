@@ -229,8 +229,6 @@ var LabelsPanel = function (options) {
     }
 
     this.create = function (candidate) {
-        candidate.color = WellKnownColors.Random();
-
         this._select.disable();
         this._spinner.show();
 
