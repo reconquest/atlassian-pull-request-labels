@@ -139,6 +139,7 @@ body[data-aui-version^="7.6"] .rq-labels-icon-tag {
 }
 
 #rq-label-color-picker .suggested-colors a {
+    cursor: pointer;
     display: inline-block;
     width: 30px;
     height: 30px;
