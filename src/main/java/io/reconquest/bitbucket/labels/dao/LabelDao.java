@@ -172,7 +172,8 @@ public class LabelDao {
         .alias(LabelItem.class, "item")
         .join(LabelEntity.class, "label.ID = item.LABEL_ID")
         .alias(LabelEntity.class, "label")
-        .where(clause, params);
+        .where(clause, params)
+        .order("item.ID ASC");
   }
 
   public void flush() {
@@ -182,10 +183,6 @@ public class LabelDao {
   public void deleteItems(Label[] labels) {
     ao.deleteWithSQL(LabelItem.class, "ID IN (" + conditionIn(getItemIds(labels)) + ")");
   }
-
-  // public String hash(LabelEntity label)  {
-  //  return hash(label.getProjectId(), label.getRepositoryId(), label.getName());
-  // }
 
   private String hash(Object... objects) {
     String[] strings = new String[objects.length];

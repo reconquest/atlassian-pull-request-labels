@@ -345,7 +345,8 @@ public class PullRequestLabels {
 
     final Label[] items = dao.find(project.getId(), repository.getId());
 
-    return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(items))).build();
+    return Response.ok(new PullRequestLabelsListResponse(this.getUniqueLabelsResponse(items)))
+        .build();
   }
 
   @POST
@@ -503,15 +504,27 @@ public class PullRequestLabels {
   }
 
   private PullRequestLabelResponse[] getLabelsResponse(Label[] labels) {
-    HashMap<String, PullRequestLabelResponse> set = new HashMap<String, PullRequestLabelResponse>();
+    PullRequestLabelResponse[] response = new PullRequestLabelResponse[labels.length];
+    for (int i = 0; i < labels.length; i++) {
+      response[i] = new PullRequestLabelResponse(labels[i]);
+    }
+    return response;
+  }
+
+  private PullRequestLabelResponse[] getUniqueLabelsResponse(Label[] labels) {
+    HashSet<String> indexed = new HashSet<String>();
+    ArrayList<PullRequestLabelResponse> responses = new ArrayList<PullRequestLabelResponse>();
 
     for (int i = 0; i < labels.length; i++) {
-      set.put(labels[i].getName(), new PullRequestLabelResponse(labels[i]));
+      if (indexed.contains(labels[i].getName())) {
+        continue;
+      }
+
+      indexed.add(labels[i].getName());
+
+      responses.add(new PullRequestLabelResponse(labels[i]));
     }
 
-    PullRequestLabelResponse[] response =
-        set.values().toArray(new PullRequestLabelResponse[set.size()]);
-
-    return response;
+    return responses.toArray(new PullRequestLabelResponse[0]);
   }
 }
