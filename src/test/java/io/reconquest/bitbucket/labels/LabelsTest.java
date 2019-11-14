@@ -2,6 +2,9 @@ package io.reconquest.bitbucket.labels;
 
 import java.sql.SQLException;
 
+import com.atlassian.activeobjects.external.ActiveObjects;
+import com.atlassian.activeobjects.spi.DatabaseType;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,13 +31,16 @@ import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
 @Jdbc(DynamicJdbcConfiguration.class)
 @NameConverters
 public final class LabelsTest extends Assert {
-  private EntityManager ao;
+  private EntityManager entityManager;
   private LabelDao labelDao;
   private LabelLegacyDao legacyDao;
   private MigrationDao migrationDao;
 
+  private ActiveObjects ao;
+
   @Before
   public void setUp() {
+    ao = new EntityManagedActiveObjects(entityManager, DatabaseType.HSQL);
     labelDao = new LabelDao(ao);
     legacyDao = new LabelLegacyDao(ao);
     migrationDao = new MigrationDao(ao);
@@ -92,15 +98,15 @@ public final class LabelsTest extends Assert {
     assertEquals(test.getFinishedAt(), fact.getFinishedAt());
     assertEquals("TEST_MIGRATION", fact.getKey());
 
-    SQLException thrown = null;
+    Exception thrown = null;
     try {
       migrationDao.create("TEST_MIGRATION");
-    } catch (SQLException e) {
+    } catch (Exception e) {
       thrown = e;
     }
 
     assertNotNull(thrown);
-    assertTrue(thrown instanceof SQLException);
+    assertTrue(thrown instanceof Exception);
   }
 
   public static final class LabelsTestDatabaseUpdater implements DatabaseUpdater // (2)

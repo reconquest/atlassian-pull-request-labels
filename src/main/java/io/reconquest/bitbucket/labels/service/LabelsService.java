@@ -1,6 +1,6 @@
 package io.reconquest.bitbucket.labels.service;
 
-import java.sql.SQLException;
+import com.atlassian.activeobjects.external.ActiveObjects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,18 +9,17 @@ import io.reconquest.bitbucket.labels.ao.Migration;
 import io.reconquest.bitbucket.labels.dao.LabelDao;
 import io.reconquest.bitbucket.labels.dao.LabelLegacyDao;
 import io.reconquest.bitbucket.labels.dao.MigrationDao;
-import net.java.ao.EntityManager;
 
 public class LabelsService {
   private static Logger log = LoggerFactory.getLogger(LabelsService.class.getSimpleName());
   public static String PLUGIN_KEY = "io.reconquest.bitbucket.labels";
 
-  private EntityManager ao;
+  private ActiveObjects ao;
   private LabelDao labelDao;
   private LabelLegacyDao legacyDao;
   private MigrationDao migrationDao;
 
-  public LabelsService(EntityManager ao) {
+  public LabelsService(ActiveObjects ao) {
     this.ao = ao;
 
     this.labelDao = new LabelDao(ao);
@@ -29,14 +28,10 @@ public class LabelsService {
   }
 
   public void start() {
-    try {
-      this.migrate();
-    } catch (SQLException e) {
-      log.error("migration failed", e);
-    }
+    this.migrate();
   }
 
-  public void migrate() throws SQLException {
+  public void migrate() {
     Migration fact = migrationDao.find(MigrationLabelsV5.MIGRATION_KEY);
     if (fact != null) {
       log.warn(

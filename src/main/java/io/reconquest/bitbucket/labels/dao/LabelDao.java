@@ -3,9 +3,10 @@ package io.reconquest.bitbucket.labels.dao;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.atlassian.activeobjects.external.ActiveObjects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,18 +15,17 @@ import io.reconquest.bitbucket.labels.Label;
 import io.reconquest.bitbucket.labels.ao.LabelEntity;
 import io.reconquest.bitbucket.labels.ao.LabelItem;
 import net.java.ao.DBParam;
-import net.java.ao.EntityManager;
 import net.java.ao.Query;
 
 public class LabelDao {
-  private final EntityManager ao;
+  private final ActiveObjects ao;
   private static Logger log = LoggerFactory.getLogger(LabelDao.class.getSimpleName());
 
-  public LabelDao(EntityManager ao) {
+  public LabelDao(ActiveObjects ao) {
     this.ao = ao;
   }
 
-  private Label[] find(String clause, Object... params) throws SQLException {
+  private Label[] find(String clause, Object... params) {
     LabelItem[] aoItems = this.ao.find(LabelItem.class, getJoinQuery(clause, params));
 
     Set<Integer> setLabelIds = new HashSet<Integer>();
@@ -47,7 +47,7 @@ public class LabelDao {
     return Label.Factory.getLabels(aoItems, aoLabels);
   }
 
-  public Label[] find(int projectId, int repositoryId, long pullRequestId) throws SQLException {
+  public Label[] find(int projectId, int repositoryId, long pullRequestId) {
     return this.find(
         "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND item.PULL_REQUEST_ID = ?",
         projectId,
@@ -55,11 +55,11 @@ public class LabelDao {
         pullRequestId);
   }
 
-  public Label[] find(int projectId, int repositoryId) throws SQLException {
+  public Label[] find(int projectId, int repositoryId) {
     return this.find("item.PROJECT_ID = ? AND item.REPOSITORY_ID = ?", projectId, repositoryId);
   }
 
-  public Label[] find(int projectId, int repositoryId, String name) throws SQLException {
+  public Label[] find(int projectId, int repositoryId, String name) {
     return this.find(
         "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND label.NAME LIKE ?",
         projectId,
@@ -67,8 +67,7 @@ public class LabelDao {
         name);
   }
 
-  public Label[] find(int projectId, int repositoryId, long pullRequestId, String name)
-      throws SQLException {
+  public Label[] find(int projectId, int repositoryId, long pullRequestId, String name) {
     return this.find(
         "item.PROJECT_ID = ? AND item.REPOSITORY_ID = ? AND item.PULL_REQUEST_ID = ?"
             + " AND label.NAME LIKE ?",
@@ -78,7 +77,7 @@ public class LabelDao {
         name);
   }
 
-  public Label[] find(Integer[] repositories) throws SQLException {
+  public Label[] find(Integer[] repositories) {
     String[] ids = new String[repositories.length];
     for (int i = 0; i < repositories.length; i++) {
       ids[i] = String.valueOf(repositories[i]);
@@ -88,8 +87,7 @@ public class LabelDao {
     return this.find("item.REPOSITORY_ID IN (" + query + ")");
   }
 
-  public LabelEntity createLabelEntity(int projectId, int repositoryId, String name, String color)
-      throws SQLException {
+  public LabelEntity createLabelEntity(int projectId, int repositoryId, String name, String color) {
     try {
       LabelEntity label = this.ao.create(
           LabelEntity.class,
@@ -114,7 +112,7 @@ public class LabelDao {
   }
 
   public LabelItem createLabelItem(
-      int projectId, int repositoryId, long pullRequestId, LabelEntity label) throws SQLException {
+      int projectId, int repositoryId, long pullRequestId, LabelEntity label) {
     try {
       return this.ao.create(
           LabelItem.class,
@@ -141,8 +139,8 @@ public class LabelDao {
     }
   }
 
-  public int create(int projectId, int repositoryId, long pullRequestId, String name, String color)
-      throws SQLException {
+  public int create(
+      int projectId, int repositoryId, long pullRequestId, String name, String color) {
     LabelEntity label = createLabelEntity(projectId, repositoryId, name, color);
     LabelItem item = createLabelItem(projectId, repositoryId, pullRequestId, label);
     return item.getID();
@@ -177,15 +175,15 @@ public class LabelDao {
         .where(clause, params);
   }
 
-  public void flush() throws SQLException {
+  public void flush() {
     ao.flush();
   }
 
-  public void deleteItems(Label[] labels) throws SQLException {
+  public void deleteItems(Label[] labels) {
     ao.deleteWithSQL(LabelItem.class, "ID IN (" + conditionIn(getItemIds(labels)) + ")");
   }
 
-  // public String hash(LabelEntity label) throws SQLException {
+  // public String hash(LabelEntity label)  {
   //  return hash(label.getProjectId(), label.getRepositoryId(), label.getName());
   // }
 

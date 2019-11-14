@@ -1,6 +1,6 @@
 package io.reconquest.bitbucket.labels.service;
 
-import java.sql.SQLException;
+import com.atlassian.activeobjects.external.ActiveObjects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +9,6 @@ import io.reconquest.bitbucket.labels.ao.LabelEntity;
 import io.reconquest.bitbucket.labels.ao.LabelItem;
 import io.reconquest.bitbucket.labels.ao.LabelLegacy;
 import io.reconquest.bitbucket.labels.dao.LabelDao;
-import net.java.ao.EntityManager;
 import net.java.ao.EntityStreamCallback;
 
 public class MigrationLabelsV5 {
@@ -22,29 +21,26 @@ public class MigrationLabelsV5 {
     "#AD4363", "#7F8C8D", "#0033CC", "#44AD8E", "#5843AD", "#004E00", "#D1D100"
   };
 
-  private EntityManager ao;
+  private ActiveObjects ao;
   private LabelDao labelDao;
 
   private int colorsCursor = 0;
   private int cursor = 0;
 
-  public MigrationLabelsV5(EntityManager ao, LabelDao labelDao) {
+  public MigrationLabelsV5(ActiveObjects ao, LabelDao labelDao) {
     this.ao = ao;
     this.labelDao = labelDao;
   }
 
-  public void process() throws SQLException {
+  public void process() {
     int total = ao.count(LabelLegacy.class);
     ao.stream(LabelLegacy.class, new EntityStreamCallback<LabelLegacy, Integer>() {
       @Override
       public void onRowRead(LabelLegacy label) {
         cursor++;
         log.warn("[{}/{}] upgrading label", cursor, total);
-        try {
-          processLabel(label);
-        } catch (SQLException e) {
-          log.error("unable to upgrade label", e);
-        }
+
+        processLabel(label);
       }
     });
 
@@ -54,7 +50,7 @@ public class MigrationLabelsV5 {
     log.warn("{} labels migrated to {} label-items and {} label-entities", total, items, labels);
   }
 
-  private void processLabel(LabelLegacy legacy) throws SQLException {
+  private void processLabel(LabelLegacy legacy) {
     String color = colors[colorsCursor];
 
     labelDao.create(
