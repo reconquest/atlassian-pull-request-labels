@@ -107,7 +107,16 @@ public class LabelDao {
         throw e;
       }
 
-      return labels[0];
+      // a corner case, if UI doesn't see this label it will generate random
+      // color and will try to create label, we need to behave like there were
+      // no such label before so we update color.
+      LabelEntity found = labels[0];
+      if (!found.getColor().equals(color)) {
+        found.setColor(color);
+        found.save();
+      }
+
+      return found;
     }
   }
 
