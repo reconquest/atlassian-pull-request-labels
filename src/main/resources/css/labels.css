@@ -114,10 +114,6 @@ body[data-aui-version^="7.6"] .rq-labels-icon-tag {
     position: relative;
 }
 
-.rq-labels-select.aui-select2-container.select2-container .select2-choice .select2-chosen {
-    overflow: visible;
-}
-
 .rq-labels-select-dropdown.aui-select2-drop .select2-results .select2-result-label {
     padding: 5px 0 0 7px;
 }

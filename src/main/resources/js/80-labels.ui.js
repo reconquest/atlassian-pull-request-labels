@@ -147,11 +147,43 @@ var SelectLabel = function(options) {
                 );
             }
 
-            return $('<div/>').append(
+            var $label = new Label(item);
+
+            var $item = $('<div/>').append(
                 new IconTag(),
-                new Label(item),
+                $label,
                 item.id ? '' : '(new)'
-            )
+            );
+
+            $item.on('mouseout mousewheel DOMMouseScroll', function () {
+                $item.css('position', '');
+                if ($item._timer) {
+                    clearTimeout($item._timer);
+                    $item._timer = null;
+                }
+            });
+
+            $item.on('mouseover', function () {
+                if ($item._timer) {
+                    return;
+                }
+
+                $item._timer = setTimeout(function () {
+                    var height = $item.parent().height();
+                    var width = $item.parent().width();
+                    var offset = $item.offset();
+
+                    $item.parent().height(height).width(width);
+                    $item
+                        .css('position', 'fixed')
+                        .css('z-index', '10')
+                        .offset(offset);
+
+                    $item._timer = null;
+                }, 200);
+            });
+
+            return $item;
         },
         css: {
             dropdown: 'rq-labels-select-dropdown',
