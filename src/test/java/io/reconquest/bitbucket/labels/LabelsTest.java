@@ -71,6 +71,9 @@ public final class LabelsTest extends Assert {
 
     MigrationLabelsV5 migration = new MigrationLabelsV5(ao, labelDao);
     migration.process();
+
+    assertEquals(7, ao.find(LabelEntity.class).length);
+    assertEquals(9, ao.find(LabelItem.class).length);
   }
 
   @Test
