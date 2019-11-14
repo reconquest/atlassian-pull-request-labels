@@ -272,9 +272,17 @@ var LabelsPanel = function (options) {
                     }
 
                     var select = function(color) {
-                        label.color = color;
-                        this.color(color);
-                        options.update(label);
+                        panel._spinner.show();
+
+                        $.when(
+                            options.update(label)
+                        ).done(
+                            function () {
+                                panel._spinner.hide();
+                                label.color = color;
+                                this.color(color);
+                            }.bind(this)
+                        );
                     }.bind(this);
 
                     var cancel = function (color) {
