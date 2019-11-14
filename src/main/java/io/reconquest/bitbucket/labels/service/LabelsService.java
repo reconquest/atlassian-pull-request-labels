@@ -1,6 +1,6 @@
 package io.reconquest.bitbucket.labels.service;
 
-import com.atlassian.activeobjects.external.ActiveObjects;
+import java.sql.SQLException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,17 +9,18 @@ import io.reconquest.bitbucket.labels.ao.Migration;
 import io.reconquest.bitbucket.labels.dao.LabelDao;
 import io.reconquest.bitbucket.labels.dao.LabelLegacyDao;
 import io.reconquest.bitbucket.labels.dao.MigrationDao;
+import net.java.ao.EntityManager;
 
 public class LabelsService {
   private static Logger log = LoggerFactory.getLogger(LabelsService.class.getSimpleName());
   public static String PLUGIN_KEY = "io.reconquest.bitbucket.labels";
 
-  private ActiveObjects ao;
+  private EntityManager ao;
   private LabelDao labelDao;
   private LabelLegacyDao legacyDao;
   private MigrationDao migrationDao;
 
-  public LabelsService(ActiveObjects ao) {
+  public LabelsService(EntityManager ao) {
     this.ao = ao;
 
     this.labelDao = new LabelDao(ao);
@@ -28,10 +29,14 @@ public class LabelsService {
   }
 
   public void start() {
-    this.migrate();
+    try {
+      this.migrate();
+    } catch (SQLException e) {
+      log.error("migration failed", e);
+    }
   }
 
-  public void migrate() {
+  public void migrate() throws SQLException {
     Migration fact = migrationDao.find(MigrationLabelsV5.MIGRATION_KEY);
     if (fact != null) {
       log.warn(
@@ -40,19 +45,6 @@ public class LabelsService {
           fact.getFinishedAt());
       return;
     }
-
-    legacyDao.create(1, 1, 1, "feature");
-
-    legacyDao.create(1, 1, 2, "bug");
-    legacyDao.create(1, 1, 2, "hotfix");
-
-    legacyDao.create(1, 1, 3, "docs");
-    legacyDao.create(1, 1, 3, "tests");
-    legacyDao.create(1, 1, 3, "legacy");
-    legacyDao.create(1, 1, 3, "hotfix"); // the same label
-
-    legacyDao.create(1, 1, 4, "feature"); // the same label
-    legacyDao.create(1, 1, 4, "lgtm");
 
     MigrationLabelsV5 legacyMigration = new MigrationLabelsV5(ao, labelDao);
     legacyMigration.process();
