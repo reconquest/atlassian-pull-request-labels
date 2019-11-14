@@ -64,7 +64,7 @@ var API = function (baseURL) {
         return $.ajax(
             this.urls.byPullRequest(project, repo, pr),
             {
-                data: {name: label.name},
+                data: {name: label.name, color: label.color},
                 method: "POST",
                 headers: {
                     "X-Atlassian-Token": "no-check"

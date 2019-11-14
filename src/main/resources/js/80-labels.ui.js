@@ -229,6 +229,8 @@ var LabelsPanel = function (options) {
     }
 
     this.create = function (candidate) {
+        candidate.color = WellKnownColors.Random();
+
         this._select.disable();
         this._spinner.show();
 
@@ -264,51 +266,51 @@ var LabelsPanel = function (options) {
 
         this._labels[label.id] = label;
 
-        this._$labels.append(
-            new Label(label, {
-                on: {
-                    click: function () {
-                        if (!editing) {
-                            return;
-                        }
-
-                        var select = function(color) {
-                            label.color = color;
-                            this.color(color);
-                            options.update(label);
-                        }.bind(this);
-
-                        var cancel = function (color) {
-                            return function() { select(color); }
-                        }(label.color);
-
-                        panel._colorPicker.bind(
-                            this,
-                            {
-                                init: function () {
-                                    return label.color;
-                                },
-
-                                select: select,
-                                cancel: cancel
-                            }
-                        );
-                    },
-                    close: function() {
-                        panel._colorPicker.unbind();
-                        panel._spinner.show();
-
-                        $.when(
-                            options.remove(label)
-                        ).done(function () {
-                            delete panel._labels[label.id];
-                            this.remove();
-                            panel._spinner.hide();
-                        }.bind(this));
+        var $label = new Label(label, {
+            on: {
+                click: function () {
+                    if (!editing) {
+                        return;
                     }
+
+                    var select = function(color) {
+                        label.color = color;
+                        this.color(color);
+                        options.update(label);
+                    }.bind(this);
+
+                    var cancel = function (color) {
+                        return function() { select(color); }
+                    }(label.color);
+
+                    panel._colorPicker.bind(
+                        this,
+                        {
+                            init: function () {
+                                return label.color;
+                            },
+
+                            select: select,
+                            cancel: cancel
+                        }
+                    );
+                },
+                close: function() {
+                    panel._colorPicker.unbind();
+                    panel._spinner.show();
+
+                    $.when(
+                        options.remove(label)
+                    ).done(function () {
+                        delete panel._labels[label.id];
+                        this.remove();
+                        panel._spinner.hide();
+                    }.bind(this));
                 }
-            })
-        );
+            }
+        });
+
+        this._$labels.append($label);
     }
 
     this._spinner = new Spinner();
