@@ -152,7 +152,7 @@ public class LabelDao {
       int projectId, int repositoryId, long pullRequestId, String name, String color) {
     LabelEntity label = createLabelEntity(projectId, repositoryId, name, color);
     LabelItem item = createLabelItem(projectId, repositoryId, pullRequestId, label);
-    return item.getID();
+    return label.getID();
   }
 
   public void update(int projectId, int repositoryId, int labelId, String name, String color)
