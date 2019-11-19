@@ -101,14 +101,18 @@ var PullRequestTable = function (labelsProvider) {
     this._extractPullRequestID = function(row) {
         var $td = $(row).find('td.summary');
 
-        var id = $td.data('pull-request-id')
-        if (id) {
-            return id;
+        var repositoryID = $td.data('repository-id')
+            || $td.find('div a').data('repository-id');
+
+        var pullRequestID = $td.data('pull-request-id')
+            || $td.find('div a').data('pull-request-id');
+
+        if (repositoryID && pullRequestID) {
+            return repositoryID + "." + pullRequestID;
         }
 
-        id = $td.find('div a').data('pull-request-id')
-        if (id) {
-            return id;
+        if (pullRequestID) {
+            return pullRequestID;
         }
 
         return "";

@@ -41,8 +41,10 @@ var LabelsCellProviderDynamic = function (selector, api) {
 
     this._findIdentifiers = function () {
         $(selector).find('td div.title a').each(function(_, item) {
-            this._pullRequests[$(item).data('pull-request-id')] = 1;
-            this._repositories[$(item).data('repository-id')] = 1;
+            var repositoryID = $(item).data('repository-id');
+            var pullRequestID = $(item).data('pull-request-id');
+            this._repositories[repositoryID] = 1;
+            this._pullRequests[repositoryID + "." + pullRequestID] = 1;
         }.bind(this))
     }
 
@@ -66,10 +68,13 @@ var LabelsCellProviderDynamic = function (selector, api) {
             function (response) {
                 $.each(
                     response.labels,
-                    function (pr, labels) {
-                        if (!this._cells[pr]) {
-                            this._cells[pr] = this._newLabelCell(labels);
-                        }
+                    function (repositoryID, pullRequests) {
+                        $.each(pullRequests, function (pullRequestID, labels) {
+                            var id = repositoryID + "." + pullRequestID;
+                            if (!this._cells[id]) {
+                                this._cells[id] = this._newLabelCell(labels);
+                            }
+                        }.bind(this))
                     }.bind(this)
                 );
 
