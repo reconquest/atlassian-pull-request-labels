@@ -55,6 +55,7 @@ import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsListResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsMapResponse;
 import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsSaveResponse;
+import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsTreeResponse;
 import io.reconquest.bitbucket.labels.service.LabelsService;
 
 @Path("/")
@@ -144,6 +145,7 @@ public class PullRequestLabels {
 
     final Label[] items = dao.find(project.getId(), repository.getId());
 
+    // TODO: move to PullRequestLabelsMapResponse constructor
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
 
@@ -369,20 +371,7 @@ public class PullRequestLabels {
 
     final Label[] items = dao.find(repositories.toArray(new Integer[0]));
 
-    HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
-        new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
-
-    for (Label item : items) {
-      ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(item.getPullRequestId());
-      if (pullRequestLabels == null) {
-        pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
-        map.put(item.getPullRequestId(), pullRequestLabels);
-      }
-
-      pullRequestLabels.add(new PullRequestLabelResponse(item));
-    }
-
-    return Response.ok(new PullRequestLabelsMapResponse(map)).build();
+    return Response.ok(new PullRequestLabelsTreeResponse(items)).build();
   }
 
   @PUT
@@ -503,6 +492,7 @@ public class PullRequestLabels {
     return Response.ok().build();
   }
 
+  // TODO: move to constructor of PullRequestLabelResponse
   private PullRequestLabelResponse[] getLabelsResponse(Label[] labels) {
     PullRequestLabelResponse[] response = new PullRequestLabelResponse[labels.length];
     for (int i = 0; i < labels.length; i++) {
