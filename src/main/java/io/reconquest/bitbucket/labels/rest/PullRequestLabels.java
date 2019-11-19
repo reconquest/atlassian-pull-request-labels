@@ -25,7 +25,6 @@ import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.bitbucket.auth.AuthenticationContext;
 import com.atlassian.bitbucket.avatar.AvatarRequest;
 import com.atlassian.bitbucket.avatar.AvatarService;
-import com.atlassian.bitbucket.cluster.ClusterService;
 import com.atlassian.bitbucket.project.Project;
 import com.atlassian.bitbucket.project.ProjectService;
 import com.atlassian.bitbucket.pull.PullRequest;
@@ -39,7 +38,6 @@ import com.atlassian.bitbucket.repository.RepositoryService;
 import com.atlassian.bitbucket.rest.pull.RestPullRequest;
 import com.atlassian.bitbucket.rest.pull.RestPullRequestParticipant;
 import com.atlassian.bitbucket.rest.util.RestPage;
-import com.atlassian.bitbucket.server.StorageService;
 import com.atlassian.bitbucket.util.Page;
 import com.atlassian.bitbucket.util.PageImpl;
 import com.atlassian.bitbucket.util.PageRequest;
@@ -74,15 +72,13 @@ public class PullRequestLabels {
   public PullRequestLabels(
       @ComponentImport ActiveObjects ao,
       @ComponentImport PluginLicenseManager pluginLicenseManager,
-      @ComponentImport StorageService storageService,
-      @ComponentImport ClusterService clusterService,
       @ComponentImport RepositoryService repositoryService,
       @ComponentImport PullRequestService pullRequestService,
       @ComponentImport ProjectService projectService,
       @ComponentImport AvatarService avatarService,
       @ComponentImport AuthenticationContext authContext) {
-    this.licenseValidator = new LicenseValidator(
-        LabelsService.PLUGIN_KEY, pluginLicenseManager, storageService, clusterService);
+    this.licenseValidator = new LicenseValidator(LabelsService.PLUGIN_KEY, pluginLicenseManager);
+
     this.repositoryService = checkNotNull(repositoryService);
     this.pullRequestService = checkNotNull(pullRequestService);
     this.projectService = checkNotNull(projectService);

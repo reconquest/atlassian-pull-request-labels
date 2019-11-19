@@ -13,8 +13,6 @@ import java.security.SignatureException;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
-import com.atlassian.bitbucket.cluster.ClusterService;
-import com.atlassian.bitbucket.server.StorageService;
 import com.atlassian.upm.api.license.PluginLicenseManager;
 import com.atlassian.upm.api.license.entity.PluginLicense;
 import com.atlassian.upm.api.util.Option;
@@ -27,8 +25,6 @@ import org.slf4j.LoggerFactory;
 public class LicenseValidator {
   private static Logger log = LoggerFactory.getLogger(LicenseValidator.class.getSimpleName());
   private PluginLicenseManager pluginLicenseManager;
-  private StorageService storageService;
-  private ClusterService clusterService;
   private String pluginKey;
   private boolean licenseSignatureVerified = false;
 
@@ -52,15 +48,9 @@ public class LicenseValidator {
       + "ZJXFZ3lnW1fqyDe7KIaTZw3sGrBZ/4IhpvnvGHVxBYz1rBahL3KpYt1b6E6N65t4\n"
       + "2nOMzOgp6Glhr++St20VeNwfwV2PTN5Je80=";
 
-  public LicenseValidator(
-      String pluginKey,
-      PluginLicenseManager pluginLicenseManager,
-      StorageService storageService,
-      ClusterService clusterService) {
+  public LicenseValidator(String pluginKey, PluginLicenseManager pluginLicenseManager) {
     this.pluginKey = pluginKey;
     this.pluginLicenseManager = pluginLicenseManager;
-    this.storageService = storageService;
-    this.clusterService = clusterService;
 
     this.initLicense();
   }
@@ -118,8 +108,7 @@ public class LicenseValidator {
   }
 
   public String readPluginLicense() {
-    File homeDir = getHomeDir();
-    File license = new File(homeDir.getAbsolutePath(), pluginKey + ".license");
+    File license = new File(pluginKey + ".license");
     if (!license.exists()) {
       return null;
     }
@@ -138,14 +127,6 @@ public class LicenseValidator {
     KeyFactory kf = KeyFactory.getInstance("DSA");
     DSAPublicKey pubKey = (DSAPublicKey) kf.generatePublic(new X509EncodedKeySpec(encoded));
     return pubKey;
-  }
-
-  private File getHomeDir() {
-    if (this.clusterService.isAvailable()) {
-      return this.storageService.getSharedHomeDir().toFile();
-    } else {
-      return this.storageService.getHomeDir().toFile();
-    }
   }
 
   public boolean isDefined() {
