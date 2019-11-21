@@ -57,7 +57,9 @@ var React_15 = function (element) {
         }
 
         this.state = function() {
-            return pointer._instance.state;
+            // BB 5.0.2 non-dev version.
+            return (pointer._instance ||
+                pointer._hostContainerInfo._topLevelWrapper._renderedComponent._instance).state;
         }
 
         return this;

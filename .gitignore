@@ -5,5 +5,5 @@
 /.settings
 /.classpath
 /bin
-src/main/resources/*.license
-/src/main/resources/js/batch.js
+/*.license
+/src/main/resources/js/batch.min.js

@@ -262,6 +262,6 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <ao.version>3.1.7</ao.version>
         <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
-        <reconquest.batch.js>batch.js</reconquest.batch.js>
+        <reconquest.batch.js>batch.min.js</reconquest.batch.js>
     </properties>
 </project>

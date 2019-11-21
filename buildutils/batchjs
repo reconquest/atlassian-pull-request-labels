@@ -3,7 +3,7 @@
 sources = "./src/main/resources/js"
 prepend = "(function ($) {\n"
 append  = "\n}(AJS.$));"
-target  = "batch.js";
+target  = "batch.min.js";
 
 import os
 import os.path
