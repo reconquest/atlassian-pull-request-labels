@@ -2,13 +2,10 @@ package io.reconquest.bitbucket.labels.rest;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import static java.util.logging.Level.INFO;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.logging.Logger;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -16,6 +13,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -47,51 +45,47 @@ import com.atlassian.bitbucket.util.PageRequestImpl;
 import com.atlassian.plugin.spring.scanner.annotation.component.Scanned;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.upm.api.license.PluginLicenseManager;
-import com.atlassian.upm.api.license.entity.PluginLicense;
-import com.atlassian.upm.api.util.Option;
 
-import io.reconquest.bitbucket.labels.ao.Label;
-
-import net.java.ao.DBParam;
-import net.java.ao.Query;
+import io.reconquest.bitbucket.labels.Label;
+import io.reconquest.bitbucket.labels.LicenseValidator;
+import io.reconquest.bitbucket.labels.dao.LabelDao;
+import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelResponse;
+import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsListResponse;
+import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsMapResponse;
+import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsSaveResponse;
+import io.reconquest.bitbucket.labels.rest.response.PullRequestLabelsTreeResponse;
+import io.reconquest.bitbucket.labels.service.LabelsService;
 
 @Path("/")
 @Scanned
 public class PullRequestLabels {
-  @ComponentImport private final ActiveObjects ao;
+  private final RepositoryService repositoryService;
+  private final PullRequestService pullRequestService;
+  private final ProjectService projectService;
+  private final AvatarService avatarService;
+  private final AuthenticationContext authContext;
 
-  @ComponentImport private final PluginLicenseManager pluginLicenseManager;
-
-  private static Logger log = Logger.getLogger(PullRequestLabels.class.getSimpleName());
-
-  @ComponentImport private final RepositoryService repositoryService;
-
-  @ComponentImport private final PullRequestService pullRequestService;
-
-  @ComponentImport private final ProjectService projectService;
-
-  @ComponentImport private final AvatarService avatarService;
-
-  @ComponentImport private final AuthenticationContext authContext;
+  private final LabelDao dao;
+  private final LicenseValidator licenseValidator;
 
   @Inject
   public PullRequestLabels(
-      PluginLicenseManager pluginLicenseManager,
-      ActiveObjects ao,
-      RepositoryService repositoryService,
-      PullRequestService pullRequestService,
-      ProjectService projectService,
-      AvatarService avatarService,
-      AuthenticationContext authContext) {
-    log.setLevel(INFO);
+      @ComponentImport ActiveObjects ao,
+      @ComponentImport PluginLicenseManager pluginLicenseManager,
+      @ComponentImport RepositoryService repositoryService,
+      @ComponentImport PullRequestService pullRequestService,
+      @ComponentImport ProjectService projectService,
+      @ComponentImport AvatarService avatarService,
+      @ComponentImport AuthenticationContext authContext) {
+    this.licenseValidator = new LicenseValidator(LabelsService.PLUGIN_KEY, pluginLicenseManager);
 
-    this.pluginLicenseManager = pluginLicenseManager;
-    this.ao = checkNotNull(ao);
     this.repositoryService = checkNotNull(repositoryService);
     this.pullRequestService = checkNotNull(pullRequestService);
     this.projectService = checkNotNull(projectService);
     this.avatarService = checkNotNull(avatarService);
     this.authContext = checkNotNull(authContext);
+
+    this.dao = new LabelDao(checkNotNull(ao));
   }
 
   @GET
@@ -101,7 +95,7 @@ public class PullRequestLabels {
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -120,17 +114,9 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final Label[] labels =
-        this.ao.find(
-            Label.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? AND REPOSITORY_ID = ? AND PULL_REQUEST_ID = ?",
-                    project.getId(),
-                    repository.getId(),
-                    pullRequest.getId()));
-
-    return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(labels))).build();
+    return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(
+            dao.find(project.getId(), repository.getId(), pullRequest.getId()))))
+        .build();
   }
 
   @GET
@@ -139,7 +125,7 @@ public class PullRequestLabels {
   public Response listByRepositoryHash(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -153,24 +139,20 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final Label[] labels =
-        this.ao.find(
-            Label.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
+    final Label[] items = dao.find(project.getId(), repository.getId());
 
+    // TODO: move to PullRequestLabelsMapResponse constructor
     HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
         new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
 
-    for (Label label : labels) {
-      ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(label.getPullRequestId());
+    for (Label item : items) {
+      ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(item.getPullRequestId());
       if (pullRequestLabels == null) {
         pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
-        map.put(label.getPullRequestId(), pullRequestLabels);
+        map.put(item.getPullRequestId(), pullRequestLabels);
       }
 
-      pullRequestLabels.add(new PullRequestLabelResponse(label.getID(), label.getName()));
+      pullRequestLabels.add(new PullRequestLabelResponse(item));
     }
 
     return Response.ok(new PullRequestLabelsMapResponse(map)).build();
@@ -190,7 +172,7 @@ public class PullRequestLabels {
       @QueryParam("is_reviewer") Boolean isReviewer,
       @QueryParam("start") Integer start,
       @QueryParam("limit") Integer limit) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -213,25 +195,17 @@ public class PullRequestLabels {
     }
 
     // TODO: support search by multiple labels
-    final Label[] labels =
-        this.ao.find(
-            Label.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? AND REPOSITORY_ID = ? AND NAME LIKE ?",
-                    project.getId(),
-                    repository.getId(),
-                    labelName));
+    final Label[] items = dao.find(project.getId(), repository.getId(), labelName);
 
     HashMap<Long, HashSet<String>> map = new HashMap<Long, HashSet<String>>();
-    for (Label label : labels) {
-      HashSet<String> names = map.get(label.getPullRequestId());
+    for (Label item : items) {
+      HashSet<String> names = map.get(item.getPullRequestId());
       if (names == null) {
         names = new HashSet<String>();
-        map.put(label.getPullRequestId(), names);
+        map.put(item.getPullRequestId(), names);
       }
 
-      names.add(label.getName());
+      names.add(item.getName());
     }
 
     PullRequestSearchRequest.Builder builder = new PullRequestSearchRequest.Builder();
@@ -321,18 +295,12 @@ public class PullRequestLabels {
           RestPullRequestParticipant pullRequestAuthor =
               (RestPullRequestParticipant) restPullRequest.get(RestPullRequest.AUTHOR);
 
-          pullRequestAuthor
-              .getUser()
-              .setAvatarUrl(
-                  this.avatarService.getUrlForPerson(
-                      pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
+          pullRequestAuthor.getUser().setAvatarUrl(this.avatarService.getUrlForPerson(
+              pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
 
           for (RestPullRequestParticipant pullRequestParticipant : restPullRequest.getReviewers()) {
-            pullRequestParticipant
-                .getUser()
-                .setAvatarUrl(
-                    this.avatarService.getUrlForPerson(
-                        pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
+            pullRequestParticipant.getUser().setAvatarUrl(this.avatarService.getUrlForPerson(
+                pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
           }
 
           filteredPullRequests.add(restPullRequest);
@@ -347,9 +315,8 @@ public class PullRequestLabels {
       searchStart += limit;
     }
 
-    Page<RestPullRequest> filteredPage =
-        new PageImpl<RestPullRequest>(
-            new PageRequestImpl(start, limit), filteredPullRequests, isLastPage);
+    Page<RestPullRequest> filteredPage = new PageImpl<RestPullRequest>(
+        new PageRequestImpl(start, limit), filteredPullRequests, isLastPage);
 
     return Response.ok(new RestPage<RestPullRequest>(filteredPage)).build();
   }
@@ -360,7 +327,7 @@ public class PullRequestLabels {
   public Response listByRepository(
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -374,54 +341,67 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final Label[] labels =
-        this.ao.find(
-            Label.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? AND REPOSITORY_ID = ?", project.getId(), repository.getId()));
+    final Label[] items = dao.find(project.getId(), repository.getId());
 
-    return Response.ok(new PullRequestLabelsListResponse(this.getLabelsResponse(labels))).build();
+    return Response.ok(new PullRequestLabelsListResponse(this.getUniqueLabelsResponse(items)))
+        .build();
   }
 
   @POST
   @Produces({MediaType.APPLICATION_JSON})
   @Path("/list")
   public Response list(@FormParam("repository_id") List<Integer> repositories) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
-    String[] ids = new String[repositories.size()];
     for (int i = 0; i < repositories.toArray().length; i++) {
       Integer id = repositories.get(i);
+
+      // It also ensures that the user can access to repository
       Repository repository = this.repositoryService.getById(id);
       if (repository == null) {
         return Response.status(404).build();
       }
-
-      ids[i] = String.valueOf(id);
     }
 
-    String query = String.join(",", ids);
+    final Label[] items = dao.find(repositories.toArray(new Integer[0]));
 
-    final Label[] labels =
-        this.ao.find(Label.class, Query.select().where("REPOSITORY_ID IN (" + query + ")"));
+    return Response.ok(new PullRequestLabelsTreeResponse(items)).build();
+  }
 
-    HashMap<Long, ArrayList<PullRequestLabelResponse>> map =
-        new HashMap<Long, ArrayList<PullRequestLabelResponse>>();
-
-    for (Label label : labels) {
-      ArrayList<PullRequestLabelResponse> pullRequestLabels = map.get(label.getPullRequestId());
-      if (pullRequestLabels == null) {
-        pullRequestLabels = new ArrayList<PullRequestLabelResponse>();
-        map.put(label.getPullRequestId(), pullRequestLabels);
-      }
-
-      pullRequestLabels.add(new PullRequestLabelResponse(label.getID(), label.getName()));
+  @PUT
+  @Produces({MediaType.APPLICATION_JSON})
+  @Consumes("application/x-www-form-urlencoded")
+  @Path("/{project_slug}/{repository_slug}/labels/{label_id}")
+  public Response update(
+      @PathParam("project_slug") String projectSlug,
+      @PathParam("repository_slug") String repositorySlug,
+      @PathParam("label_id") int labelId,
+      @FormParam("name") String name,
+      @FormParam("color") String color) {
+    if (!licenseValidator.isValid()) {
+      return Response.status(401).build();
     }
 
-    return Response.ok(new PullRequestLabelsMapResponse(map)).build();
+    Project project = this.projectService.getByKey(projectSlug);
+    if (project == null) {
+      return Response.status(404).build();
+    }
+
+    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    if (repository == null) {
+      return Response.status(404).build();
+    }
+
+    try {
+      dao.update(project.getId(), repository.getId(), labelId, name, color);
+      dao.flush();
+
+      return Response.ok().build();
+    } catch (Exception e) {
+      return Response.status(500).build();
+    }
   }
 
   @POST
@@ -432,8 +412,9 @@ public class PullRequestLabels {
       @PathParam("project_slug") String projectSlug,
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId,
-      @FormParam("name") String name) {
-    if (!this.isLicenseValid()) {
+      @FormParam("name") String name,
+      @FormParam("color") String color) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -452,34 +433,21 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final int found =
-        this.ao.count(
-            Label.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? "
-                        + "AND REPOSITORY_ID = ? "
-                        + "AND PULL_REQUEST_ID = ? "
-                        + "AND NAME LIKE ?",
-                    project.getId(),
-                    repository.getId(),
-                    pullRequest.getId(),
-                    name));
+    // here we ignore color because it doesn't really matter in terms of
+    // duplicates
+    //
+    // we also need to ignore them in order to save back compatibility
+    final Label[] found = dao.find(project.getId(), repository.getId(), pullRequest.getId(), name);
 
-    if (found > 0) {
-      return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+    if (found.length > 0) {
+      return Response.ok(new PullRequestLabelsSaveResponse(found[0].getLabelId())).build();
     }
 
-    this.ao.create(
-        Label.class,
-        new DBParam("PROJECT_ID", project.getId()),
-        new DBParam("REPOSITORY_ID", repository.getId()),
-        new DBParam("PULL_REQUEST_ID", pullRequest.getId()),
-        new DBParam("NAME", name));
+    int created = dao.create(project.getId(), repository.getId(), pullRequest.getId(), name, color);
 
-    this.ao.flush();
+    dao.flush();
 
-    return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+    return Response.ok(new PullRequestLabelsSaveResponse(created)).build();
   }
 
   @DELETE
@@ -491,7 +459,7 @@ public class PullRequestLabels {
       @PathParam("repository_slug") String repositorySlug,
       @PathParam("pull_request_id") Long pullRequestId,
       @FormParam("name") String name) {
-    if (!this.isLicenseValid()) {
+    if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
@@ -510,57 +478,39 @@ public class PullRequestLabels {
       return Response.status(404).build();
     }
 
-    final Label[] labels =
-        this.ao.find(
-            Label.class,
-            Query.select()
-                .where(
-                    "PROJECT_ID = ? "
-                        + "AND REPOSITORY_ID = ? "
-                        + "AND PULL_REQUEST_ID = ? "
-                        + "AND NAME = ?",
-                    project.getId(),
-                    repository.getId(),
-                    pullRequest.getId(),
-                    name));
+    final Label[] items = dao.find(project.getId(), repository.getId(), pullRequest.getId(), name);
 
-    if (labels.length > 0) {
-      this.ao.delete(labels);
-      this.ao.flush();
+    if (items.length > 0) {
+      dao.deleteItems(items);
+      dao.flush();
     }
 
-    return Response.ok(new PullRequestLabelsSaveResponse(true)).build();
+    return Response.ok().build();
   }
 
+  // TODO: move to constructor of PullRequestLabelResponse
   private PullRequestLabelResponse[] getLabelsResponse(Label[] labels) {
-    HashMap<String, PullRequestLabelResponse> set = new HashMap<String, PullRequestLabelResponse>();
-
+    PullRequestLabelResponse[] response = new PullRequestLabelResponse[labels.length];
     for (int i = 0; i < labels.length; i++) {
-      set.put(
-          labels[i].getName(),
-          new PullRequestLabelResponse(labels[i].getID(), labels[i].getName()));
+      response[i] = new PullRequestLabelResponse(labels[i]);
     }
-
-    PullRequestLabelResponse[] response =
-        set.values().toArray(new PullRequestLabelResponse[set.size()]);
-
     return response;
   }
 
-  public boolean isLicenseDefined() {
-    // return true;
-    Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
-    return licenseOption.isDefined();
-  }
+  private PullRequestLabelResponse[] getUniqueLabelsResponse(Label[] labels) {
+    HashSet<String> indexed = new HashSet<String>();
+    ArrayList<PullRequestLabelResponse> responses = new ArrayList<PullRequestLabelResponse>();
 
-  public boolean isLicenseValid() {
-    // return true;
-    Option<PluginLicense> licenseOption = pluginLicenseManager.getLicense();
-    if (!licenseOption.isDefined()) {
-      return false;
+    for (int i = 0; i < labels.length; i++) {
+      if (indexed.contains(labels[i].getName())) {
+        continue;
+      }
+
+      indexed.add(labels[i].getName());
+
+      responses.add(new PullRequestLabelResponse(labels[i]));
     }
 
-    PluginLicense pluginLicense = licenseOption.get();
-    return pluginLicense.isValid();
+    return responses.toArray(new PullRequestLabelResponse[0]);
   }
 }

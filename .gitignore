@@ -1,6 +1,9 @@
-/target/
+/target
+/targets/
 /*.log
 /.project
 /.settings
 /.classpath
 /bin
+/*.license
+/src/main/resources/js/batch.min.js

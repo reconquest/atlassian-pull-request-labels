@@ -25,10 +25,10 @@
             <transformer key="jsI18n"/>
         </transformation>
 
-        <resource name="labels.js" type="download" location="js/labels.js"/>
-
-        <!-- UNCOMMENT TO USE JS LOADER FOR SCRIPT TO QUICKEN DEVELOPMENT -->
-        <!--<resource name="labels-loader.js" type="download" location="js/labels-loader.js"/>-->
+        <!-- Run following command to use AJAX loader for dev:
+             atlas-package -Dreconquest.batch.js=batch-loader.js
+        -->
+        <resource name="batch.js" type="download" location="js/${reconquest.batch.js}"/>
 
         <resource name="labels.css" type="download" location="css/labels.css"/>
         <resource name="labels.soy.js" type="download" location="/soy/labels.soy"/>
@@ -45,6 +45,16 @@
 
     <ao key="ao-module">
         <description>The module configuring the Active Objects service used by this plugin</description>
-        <entity>io.reconquest.bitbucket.labels.ao.Label</entity>
+        <entity>io.reconquest.bitbucket.labels.ao.LabelEntity</entity>
+        <entity>io.reconquest.bitbucket.labels.ao.LabelItem</entity>
+        <entity>io.reconquest.bitbucket.labels.ao.LabelLegacy</entity>
+        <entity>io.reconquest.bitbucket.labels.ao.Migration</entity>
     </ao>
+
+    <component key="LabelsServiceLauncher"
+               class="io.reconquest.bitbucket.labels.service.LabelsServiceLauncher"
+               public="true">
+        <description>Controls the initialisation logic of the Pull Request Labels</description>
+        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
+    </component>
 </atlassian-plugin>

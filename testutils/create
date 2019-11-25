@@ -1,0 +1,60 @@
+#!/bin/bash
+
+if [[ ! "$1" ]]; then
+    echo "$0 <how-many-pull-requests-need-to-create>" >&2
+    exit 2
+fi
+
+set -euo pipefail
+
+arg_pull_requests="${1}"
+
+URI="http://admin:admin@bitbucket/bitbucket"
+
+bb() {
+    echo ":: $ stacket ${@}" >&2
+    stacket --uri "$URI/" "${@}" | sed -r 's/^/    /'
+}
+
+name() {
+    lojban $RANDOM
+}
+
+ignore() {
+    "${@}" >&- 2>&-
+}
+
+cd /tmp/
+
+project=$(name)
+bb projects create $project
+
+repo=$(name)
+bb repositories create $project $repo
+
+ignore git clone $URI/scm/$project/$repo.git
+
+cd $repo
+
+echo ":: push master branch"
+touch master
+ignore git add master
+ignore git commit -m "master"
+ignore git push origin master
+
+pr() {
+    local branch=$1
+    ignore git checkout -b $branch
+    ignore touch $branch
+    ignore git add $branch
+    ignore git commit -m $branch
+    ignore git push origin $branch
+
+    bb pull-requests create $project $repo $branch
+}
+
+for x in $(seq 1 $arg_pull_requests); do
+    branch=$(name)
+    echo ":: [$x/$arg_pull_requests] create pull-request $branch"
+    pr $branch
+done
