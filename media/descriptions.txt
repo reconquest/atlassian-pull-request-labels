@@ -1,0 +1,8 @@
+Label Your Work
+Organize Pull Requests by assigning them various labels, so team can quickly understand scope of changes.
+
+Native Search Integration
+Scope work you're interested in by narrowing search results by labels. 
+
+Colored Labels
+Make labels to be easily recognizable by assigning various colors. 
