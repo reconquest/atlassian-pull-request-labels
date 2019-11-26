@@ -107,7 +107,7 @@ var ViewPullRequestListWithFilter = function (context, api) {
 
 var ViewPullRequestDetails = function (context, api) {
     this._$ = $('.plugin-section-primary');
-    if (this._$.length == 0) {
+    if (this._$.length == 0 || !context.getPullRequestID()) {
         return new ViewNotApplicable();
     }
 
