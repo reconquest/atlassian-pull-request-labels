@@ -7,7 +7,7 @@
         <param name="plugin-logo">images/plugin.logo.144x144.png</param>
         <param name="vendor-icon">images/vendor.logo.16x16.png</param>
         <param name="vendor-logo">images/vendor.logo.72x72.png</param>
-        <param name="atlassian-licensing-enabled">true</param>
+        <!--<param name="atlassian-licensing-enabled">true</param>-->
         <!--<param name="atlassian-data-center-status">compatible</param>-->
         <!--<param name="atlassian-data-center-compatible">true</param>-->
     </plugin-info>
