@@ -6,5 +6,6 @@
 /.classpath
 /bin
 /*.license
+/docker
 /src/main/resources/js/batch.min.js
 /eclipse
