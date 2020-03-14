@@ -1,6 +1,7 @@
 version: '2'
 
 vars:
+  js: batch.min.js
   name:
     sh: pom-name
 
@@ -9,6 +10,7 @@ tasks:
     desc: compile & bundle the project
     cmds:
       - atlas-mvn package
+          -Dreconquest.batch.js={{ .js }}
     deps: [target_eclipse]
 
   #enable_debug:

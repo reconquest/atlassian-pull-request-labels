@@ -5,6 +5,28 @@
 // provide(id, callback) generates a cell for specified PR id
 //     and invokes callback while passing generated cell as an argument
 
+var LabelsCellProvider = function (project, repository, api) {
+    this._cells = {};
+
+    this.provide = function (id) {
+        if (!(id in this._cells)) {
+            return $.when(
+                api.getByPullRequest(project, repository, id)
+            ).then(
+                function (response) {
+                    return this._cells[id] = new LabelsCell(response.labels);
+                }.bind(this)
+            )
+        } else {
+            return new Promise(function(resolve) {
+                resolve(this._cells[id]);
+            }.bind(this));
+        }
+    }
+
+    return this;
+}
+
 var LabelsCellProviderStatic = function (labels) {
     this._cells = {};
 

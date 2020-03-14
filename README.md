@@ -14,6 +14,36 @@ Please [open an issue](https://github.com/reconquest/bitbucket-labels/issues/new
 
 You can always join our Slack community and drop us a line there: [slack.reconquest.io](https://slack.reconquest.io/)
 
+## Running Locally
+
+After setup, Bitbucket instance will be available at https://bitbucket.local/.
+
+Requirements:
+
+* Docker
+* [Task](https://taskfile.dev)
+* [stacket](https://github.com/kovetskiy/stacket/)
+* [Atlassian Plugin SDK](https://aur.archlinux.org/packages/atlassian-plugin-sdk-latest/)
+
+### Run Dev Bitbucket Instance
+
+```
+task version=<target-bitbucket-version> docker:run
+task nginx:run
+```
+
+### Add `bitbucket.local` to `/etc/hosts`
+
+```
+127.0.0.1 bitbucket.local
+```
+
+### Compile and Install Plugin
+
+```
+task version=<target-bitbucket-version> js=batch.loader.js atlas:install
+```
+
 ## License
 
 This project is licensed under the GNU General Public License version 2.

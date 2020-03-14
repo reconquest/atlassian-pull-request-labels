@@ -1,0 +1,131 @@
+#!/bin/bash
+
+set -euo pipefail
+
+replicas=2
+version=6.2.0
+network="bitbucket-dc"
+db="postgres"
+license="license.dc"
+
+if docker network create $network &>/dev/null; then
+    :log Docker network created: $network
+fi
+
+:log() {
+    echo "$(colorhash "$*")"
+}
+
+:oracle:start() {
+    local path=$1
+
+    docker run \
+        --detach \
+        -it \
+        -v $(readlink -f docker/$path):/u01/app/oracle/oradata \
+        -e ORACLE_PWD=SYSTEM \
+        --name oracle.dc --shm-size $(calc '2*1024*1024*1024') \
+        registry.reconquest.io/oracle/database:11.2.0.2-xe
+}
+
+:oracle:creds() {
+    echo User: SYSTEM
+    echo Password: SYSTEM
+    echo Service: XE
+}
+
+:postgres:start() {
+    local path=$1
+
+    docker run \
+        --detach \
+        -it \
+        -v $(readlink -f docker/$path):/var/lib/postgresql/data \
+        --name postgres.dc \
+        -e POSTGRES_PASSWORD=SYSTEM \
+        -e POSTGRES_DB=bb \
+        postgres
+}
+
+:postgres:creds() {
+    echo User: postgres
+    echo Password: SYSTEM
+    echo Database: bb
+}
+
+if ! docker inspect --type=container $db &>/dev/null; then
+    mkdir -p docker/$db
+    sudo chown -R 1000:1000 docker/$db
+
+    :log Starting DB "$db"
+
+    eval :$db:start docker/$db
+
+    #docker network connect $network $db &>/dev/null
+fi
+
+:container() {
+    local replica=$1
+
+    docker run \
+        -d \
+        --name "r$replica.dc" \
+        --add-host=marketplace.atlassian.com:127.0.0.1 \
+        -e ELASTICSEARCH_ENABLED=false \
+        -e HAZELCAST_NETWORK_MULTICAST=true \
+        -v $(readlink -f docker/r$replica.dc):/var/atlassian/application-data/bitbucket/ \
+        -v $(readlink -f docker/shared.dc):/var/atlassian/application-data/bitbucket/shared \
+        $((( replica == 1)) && echo -p 7990:7990) \
+        atlassian/bitbucket-server:$version
+
+    if docker network connect $network r$replica.dc 2>/dev/null; then
+        :log Docker network connected: r$replica.dc "->" $network
+    fi
+}
+
+:ip() {
+    local replica=$1
+    docker inspect --type=container \
+        -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{"\n"}}{{end}}' \
+        r$replica.dc \
+        | head -n1
+}
+
+:container 1
+ip1=$(:ip 1)
+
+:log "Container r1 starting, its ip $ip1, waiting for startup"
+_host=$ip1:7990 bitbucket-wait-startup
+
+if docker network connect $network $db.dc &>/dev/null; then
+    :log Docker network connected: $db.dc "->" $network
+fi
+
+if [[ ! -f $license ]]; then
+    :log Server: http://$ip1:7990/
+    :log Put DC license into file: $license
+    :log Press Enter when ready
+    read
+fi
+
+:log "Setting up bitbucket in r1"
+URI=http://$ip1:7990/ bitbucket-setup < $license
+
+echo
+echo
+:log Manually migrate DB: http://$ip1:7990/
+echo Host: $db.dc
+:$db:creds
+echo
+echo
+:log Press Enter when ready
+read
+
+for replica in $(seq 2 $replicas); do
+    :log Starting r$replica
+    :container $replica &>/dev/null
+done
+
+for replica in $(seq 2 $replicas); do
+    :log r$replica → http://$(:ip $replica):7990/
+done

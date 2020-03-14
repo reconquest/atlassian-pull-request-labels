@@ -1,3 +1,3 @@
 (function($) {
-    $.getScript('/js/batch.js');
+    $.getScript('/js/batch.min.js');
 }(AJS.$));

@@ -90,21 +90,21 @@ public class PullRequestLabels {
 
   @GET
   @Produces({MediaType.APPLICATION_JSON})
-  @Path("/{project_slug}/{repository_slug}/pull-requests/{pull_request_id}")
+  @Path("/{project_id}/{repository_id}/pull-requests/{pull_request_id}")
   public Response listByPullRequest(
-      @PathParam("project_slug") String projectSlug,
-      @PathParam("repository_slug") String repositorySlug,
+      @PathParam("project_id") Integer projectId,
+      @PathParam("repository_id") Integer repositoryId,
       @PathParam("pull_request_id") Long pullRequestId) {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
-    Project project = this.projectService.getByKey(projectSlug);
+    Project project = this.projectService.getById(projectId);
     if (project == null) {
       return Response.status(404).build();
     }
 
-    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    Repository repository = this.repositoryService.getById(repositoryId);
     if (repository == null) {
       return Response.status(404).build();
     }
@@ -121,20 +121,20 @@ public class PullRequestLabels {
 
   @GET
   @Produces({MediaType.APPLICATION_JSON})
-  @Path("/{project_slug}/{repository_slug}/pull-requests/")
+  @Path("/{project_id}/{repository_id}/pull-requests/")
   public Response listByRepositoryHash(
-      @PathParam("project_slug") String projectSlug,
-      @PathParam("repository_slug") String repositorySlug) {
+      @PathParam("project_id") Integer projectId,
+      @PathParam("repository_id") Integer repositoryId) {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
-    Project project = this.projectService.getByKey(projectSlug);
+    Project project = this.projectService.getById(projectId);
     if (project == null) {
       return Response.status(404).build();
     }
 
-    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    Repository repository = this.repositoryService.getById(repositoryId);
     if (repository == null) {
       return Response.status(404).build();
     }
@@ -160,11 +160,11 @@ public class PullRequestLabels {
 
   @GET
   @Produces({MediaType.APPLICATION_JSON})
-  @Path("/{project_slug}/{repository_slug}/pull-requests/:search")
+  @Path("/{project_id}/{repository_id}/pull-requests/:search")
   public Response searchPullRequestsByLabel(
       @PathParam("avatar_size") Integer avatarSize,
-      @PathParam("project_slug") String projectSlug,
-      @PathParam("repository_slug") String repositorySlug,
+      @PathParam("project_id") Integer projectId,
+      @PathParam("repository_id") Integer repositoryId,
       @QueryParam("state") String state,
       @QueryParam("label") String labelName,
       @QueryParam("target_ref") String targetRef,
@@ -176,12 +176,12 @@ public class PullRequestLabels {
       return Response.status(401).build();
     }
 
-    Project project = this.projectService.getByKey(projectSlug);
+    Project project = this.projectService.getById(projectId);
     if (project == null) {
       return Response.status(404).build();
     }
 
-    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    Repository repository = this.repositoryService.getById(repositoryId);
     if (repository == null) {
       return Response.status(404).build();
     }
@@ -323,20 +323,20 @@ public class PullRequestLabels {
 
   @GET
   @Produces({MediaType.APPLICATION_JSON})
-  @Path("/{project_slug}/{repository_slug}/")
+  @Path("/{project_id}/{repository_id}/")
   public Response listByRepository(
-      @PathParam("project_slug") String projectSlug,
-      @PathParam("repository_slug") String repositorySlug) {
+      @PathParam("project_id") Integer projectId,
+      @PathParam("repository_id") Integer repositoryId) {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
-    Project project = this.projectService.getByKey(projectSlug);
+    Project project = this.projectService.getById(projectId);
     if (project == null) {
       return Response.status(404).build();
     }
 
-    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    Repository repository = this.repositoryService.getById(repositoryId);
     if (repository == null) {
       return Response.status(404).build();
     }
@@ -373,10 +373,10 @@ public class PullRequestLabels {
   @PUT
   @Produces({MediaType.APPLICATION_JSON})
   @Consumes("application/x-www-form-urlencoded")
-  @Path("/{project_slug}/{repository_slug}/labels/{label_id}")
+  @Path("/{project_id}/{repository_id}/labels/{label_id}")
   public Response update(
-      @PathParam("project_slug") String projectSlug,
-      @PathParam("repository_slug") String repositorySlug,
+      @PathParam("project_id") Integer projectId,
+      @PathParam("repository_id") Integer repositoryId,
       @PathParam("label_id") int labelId,
       @FormParam("name") String name,
       @FormParam("color") String color) {
@@ -384,12 +384,12 @@ public class PullRequestLabels {
       return Response.status(401).build();
     }
 
-    Project project = this.projectService.getByKey(projectSlug);
+    Project project = this.projectService.getById(projectId);
     if (project == null) {
       return Response.status(404).build();
     }
 
-    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    Repository repository = this.repositoryService.getById(repositoryId);
     if (repository == null) {
       return Response.status(404).build();
     }
@@ -407,10 +407,10 @@ public class PullRequestLabels {
   @POST
   @Produces({MediaType.APPLICATION_JSON})
   @Consumes("application/x-www-form-urlencoded")
-  @Path("/{project_slug}/{repository_slug}/pull-requests/{pull_request_id}")
+  @Path("/{project_id}/{repository_id}/pull-requests/{pull_request_id}")
   public Response add(
-      @PathParam("project_slug") String projectSlug,
-      @PathParam("repository_slug") String repositorySlug,
+      @PathParam("project_id") Integer projectId,
+      @PathParam("repository_id") Integer repositoryId,
       @PathParam("pull_request_id") Long pullRequestId,
       @FormParam("name") String name,
       @FormParam("color") String color) {
@@ -418,12 +418,12 @@ public class PullRequestLabels {
       return Response.status(401).build();
     }
 
-    Project project = this.projectService.getByKey(projectSlug);
+    Project project = this.projectService.getById(projectId);
     if (project == null) {
       return Response.status(404).build();
     }
 
-    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    Repository repository = this.repositoryService.getById(repositoryId);
     if (repository == null) {
       return Response.status(404).build();
     }
@@ -453,22 +453,22 @@ public class PullRequestLabels {
   @DELETE
   @Produces({MediaType.APPLICATION_JSON})
   @Consumes("application/x-www-form-urlencoded")
-  @Path("/{project_slug}/{repository_slug}/pull-requests/{pull_request_id}")
+  @Path("/{project_id}/{repository_id}/pull-requests/{pull_request_id}")
   public Response delete(
-      @PathParam("project_slug") String projectSlug,
-      @PathParam("repository_slug") String repositorySlug,
+      @PathParam("project_id") Integer projectId,
+      @PathParam("repository_id") Integer repositoryId,
       @PathParam("pull_request_id") Long pullRequestId,
       @FormParam("name") String name) {
     if (!licenseValidator.isValid()) {
       return Response.status(401).build();
     }
 
-    Project project = this.projectService.getByKey(projectSlug);
+    Project project = this.projectService.getById(projectId);
     if (project == null) {
       return Response.status(404).build();
     }
 
-    Repository repository = this.repositoryService.getBySlug(projectSlug, repositorySlug);
+    Repository repository = this.repositoryService.getById(repositoryId);
     if (repository == null) {
       return Response.status(404).build();
     }

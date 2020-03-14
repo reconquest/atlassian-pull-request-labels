@@ -22,7 +22,7 @@ var ViewPullRequestListWithFilter = function (context, api) {
 
     this._avatarSize = new AvatarSize('medium');
 
-    this._render = function(labels, mapping) {
+    this._render = function(labels) {
         this._react = new React(this._$);
 
         // Bitbucket <= 5.0
@@ -39,8 +39,8 @@ var ViewPullRequestListWithFilter = function (context, api) {
         this._list = new PullRequestList(this._react, {
             build: function() {
                 return api.urls.search(
-                    context.getProjectKey(),
-                    context.getRepositorySlug(),
+                    context.getProjectID(),
+                    context.getRepositoryID(),
                     $.extend(
                         that._filter.get(),
                         {avatar_size: that._avatarSize.px()},
@@ -65,7 +65,13 @@ var ViewPullRequestListWithFilter = function (context, api) {
 
         this._table = {
             filter: new PullRequestTableFilter(this._filter),
-            content: new PullRequestTable(new LabelsCellProviderStatic(mapping))
+            content: new PullRequestTable(
+                new LabelsCellProvider(
+                    context.getProjectID(),
+                    context.getRepositoryID(),
+                    api
+                )
+            )
         }
 
         this._table.filter.mount(this._$.find('.filter-bar'))
@@ -75,20 +81,13 @@ var ViewPullRequestListWithFilter = function (context, api) {
     this.mount = function() {
         $.when(
             api.getByRepository(
-                context.getProjectKey(),
-                context.getRepositorySlug()
-            ),
-            api.getByPullRequestList(
-                context.getProjectKey(),
-                context.getRepositorySlug()
+                context.getProjectID(),
+                context.getRepositoryID()
             )
         )
         .done(
-            function (getByRepositoryXHR, getByPullRequestListXHR) {
-                this._render(
-                    getByRepositoryXHR[0].labels,
-                    getByPullRequestListXHR[0].labels
-                );
+            function (response) {
+                this._render(response.labels);
             }.bind(this)
         )
         .fail(function (e) {
@@ -134,8 +133,8 @@ var ViewPullRequestDetails = function (context, api) {
                 }
 
                 return api.addLabel(
-                    context.getProjectKey(),
-                    context.getRepositorySlug(),
+                    context.getProjectID(),
+                    context.getRepositoryID(),
                     context.getPullRequestID(),
                     candidate
                 ).done(
@@ -150,8 +149,8 @@ var ViewPullRequestDetails = function (context, api) {
 
             remove: function(label) {
                 return api.removeLabel(
-                    context.getProjectKey(),
-                    context.getRepositorySlug(),
+                    context.getProjectID(),
+                    context.getRepositoryID(),
                     context.getPullRequestID(),
                     label
                 );
@@ -159,8 +158,8 @@ var ViewPullRequestDetails = function (context, api) {
 
             update: function (label) {
                 return api.updateLabel(
-                    context.getProjectKey(),
-                    context.getRepositorySlug(),
+                    context.getProjectID(),
+                    context.getRepositoryID(),
                     label
                 );
             }.bind(this)
@@ -179,12 +178,12 @@ var ViewPullRequestDetails = function (context, api) {
     this.mount = function () {
         $.when(
             api.getByRepository(
-                context.getProjectKey(),
-                context.getRepositorySlug()
+                context.getProjectID(),
+                context.getRepositoryID()
             ),
             api.getByPullRequest(
-                context.getProjectKey(),
-                context.getRepositorySlug(),
+                context.getProjectID(),
+                context.getRepositoryID(),
                 context.getPullRequestID()
             )
         )
@@ -221,7 +220,13 @@ var ViewDashboard = function (context, api) {
     this.mount = function() {
         this._$.each(
             function(_, container) {
-                new PullRequestTable(this._provider).mount($(container));
+                var link = $(container).find('td div.title a');
+                var project = link.data('project-id');
+                var repository = link.data('repository-id');
+
+                new PullRequestTable(
+                    new LabelsCellProvider(project, repository, api)
+                ).mount($(container));
             }.bind(this)
         );
     }

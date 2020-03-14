@@ -101,15 +101,8 @@ var PullRequestTable = function (labelsProvider) {
     this._extractPullRequestID = function(row) {
         var $td = $(row).find('td.summary');
 
-        var repositoryID = $td.data('repository-id')
-            || $td.find('div a').data('repository-id');
-
         var pullRequestID = $td.data('pull-request-id')
             || $td.find('div a').data('pull-request-id');
-
-        if (repositoryID && pullRequestID) {
-            return repositoryID + "." + pullRequestID;
-        }
 
         if (pullRequestID) {
             return pullRequestID;
@@ -123,6 +116,8 @@ var PullRequestTable = function (labelsProvider) {
             find('thead th.reviewers').
             before(this._header);
 
+        var cells = {};
+
         $tbody.parent().
             find('tbody tr').
             each(function(_, row) {
@@ -131,10 +126,33 @@ var PullRequestTable = function (labelsProvider) {
                     return;
                 }
 
-                labelsProvider.provide(id, function(cell) {
-                    $(row).find('td.reviewers').before(cell);
-                })
+                if ($(row).hasClass('rq-labels-labeled')) {
+                    return;
+                }
+
+                $(row).addClass('rq-labels-labeled');
+
+                var cell = $("<td>&nbsp;</td>")
+
+                $(row).find('td.reviewers').before(cell);
+
+                cells[id] = cell;
             }.bind(this));
+
+        var promises = [];
+
+        $.each(cells, function (id) {
+            promises.push(labelsProvider.provide(id));
+        });
+
+        Promise.all(promises).then(function (result) {
+            var i = 0;
+            $.each(cells, function(id, cell) {
+                cell.replaceWith(result[i]);
+
+                i++;
+            })
+        });
     }
 
     this._observer = new Observer(

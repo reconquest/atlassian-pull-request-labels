@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail
+
+URI="${URI:-http://admin:admin@localhost:7990/bitbucket}"
+
+if [[ ! -d /tmp/manrepo ]]; then
+    git clone "$URI"/scm/testproj/testrepo.git /tmp/snake-test
+fi
+
+cd /tmp/snake-test
+
+echo ":: spawning shell $SHELL in snake-test" >&2
+exec $SHELL -i

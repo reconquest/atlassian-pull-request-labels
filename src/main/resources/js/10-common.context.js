@@ -1,12 +1,12 @@
 var Context = function () {
     this.state = require('bitbucket/util/state')
 
-    this.getProjectKey = function() {
-        return (this.state.getProject() || {key: null}).key
+    this.getProjectID = function() {
+        return (this.state.getProject() || {id: null}).id
     }
 
-    this.getRepositorySlug = function() {
-        return (this.state.getRepository() || {slug: null}).slug
+    this.getRepositoryID = function() {
+        return (this.state.getRepository() || {id: null}).id
     }
 
     this.getPullRequestID = function() {

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+find build/${1}/out \
+          -maxdepth 1 \
+          -type f \
+          -name '*.jar' \
+          -printf "%T@ %p\n" \
+          | sort -nr \
+          | head -n1 \
+          | awk '{print $2}'
