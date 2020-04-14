@@ -24,6 +24,7 @@ Requirements:
 * [Task](https://taskfile.dev)
 * [stacket](https://github.com/kovetskiy/stacket/)
 * [Atlassian Plugin SDK](https://aur.archlinux.org/packages/atlassian-plugin-sdk-latest/)
+    * add `/opt/atlassian/plugin-sdk/bin/` to the `$PATH`
 
 ### Run Dev Bitbucket Instance
 
