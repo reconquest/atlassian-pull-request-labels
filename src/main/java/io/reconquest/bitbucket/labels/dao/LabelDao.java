@@ -182,7 +182,7 @@ public class LabelDao {
         .join(LabelEntity.class, "label.ID = item.LABEL_ID")
         .alias(LabelEntity.class, "label")
         .where(clause, params)
-        .order("item.ID ASC");
+        .order("ID ASC");
   }
 
   public void flush() {
