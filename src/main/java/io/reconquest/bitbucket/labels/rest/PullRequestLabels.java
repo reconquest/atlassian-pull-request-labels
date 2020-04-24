@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
@@ -18,6 +19,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -162,6 +164,7 @@ public class PullRequestLabels {
   @Produces({MediaType.APPLICATION_JSON})
   @Path("/{project_id}/{repository_id}/pull-requests/:search")
   public Response searchPullRequestsByLabel(
+      @Context HttpServletRequest request,
       @PathParam("avatar_size") Integer avatarSize,
       @PathParam("project_id") Integer projectId,
       @PathParam("repository_id") Integer repositoryId,
@@ -296,11 +299,13 @@ public class PullRequestLabels {
               (RestPullRequestParticipant) restPullRequest.get(RestPullRequest.AUTHOR);
 
           pullRequestAuthor.getUser().setAvatarUrl(this.avatarService.getUrlForPerson(
-              pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
+              pullRequest.getAuthor().getUser(),
+              new AvatarRequest(request.isSecure(), avatarSize)));
 
           for (RestPullRequestParticipant pullRequestParticipant : restPullRequest.getReviewers()) {
             pullRequestParticipant.getUser().setAvatarUrl(this.avatarService.getUrlForPerson(
-                pullRequest.getAuthor().getUser(), new AvatarRequest(false, avatarSize)));
+                pullRequestParticipant.getUser(),
+                new AvatarRequest(request.isSecure(), avatarSize)));
           }
 
           filteredPullRequests.add(restPullRequest);
