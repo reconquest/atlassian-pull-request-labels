@@ -172,6 +172,7 @@ public class PullRequestLabels {
       @QueryParam("label") String labelName,
       @QueryParam("target_ref") String targetRef,
       @QueryParam("author") String author,
+      @QueryParam("reviewer") String reviewer,
       @QueryParam("is_reviewer") Boolean isReviewer,
       @QueryParam("start") Integer start,
       @QueryParam("limit") Integer limit) {
@@ -241,15 +242,22 @@ public class PullRequestLabels {
         new ArrayList<PullRequestParticipantRequest>();
 
     if (isReviewer != null && isReviewer) {
-      participants.add(
-          (new PullRequestParticipantRequest.Builder(this.authContext.getCurrentUser().getName()))
-              .role(PullRequestRole.REVIEWER)
-              .build());
+      participants.add((new PullRequestParticipantRequest.Builder(
+              this.authContext.getCurrentUser().getName()))
+          .role(PullRequestRole.REVIEWER)
+          .build());
     }
 
     if (author != null) {
-      participants.add(
-          (new PullRequestParticipantRequest.Builder(author)).role(PullRequestRole.AUTHOR).build());
+      participants.add((new PullRequestParticipantRequest.Builder(author))
+          .role(PullRequestRole.AUTHOR)
+          .build());
+    }
+
+    if (reviewer != null) {
+      participants.add((new PullRequestParticipantRequest.Builder(reviewer))
+          .role(PullRequestRole.REVIEWER)
+          .build());
     }
 
     if (start == null) {
@@ -298,14 +306,18 @@ public class PullRequestLabels {
           RestPullRequestParticipant pullRequestAuthor =
               (RestPullRequestParticipant) restPullRequest.get(RestPullRequest.AUTHOR);
 
-          pullRequestAuthor.getUser().setAvatarUrl(this.avatarService.getUrlForPerson(
-              pullRequest.getAuthor().getUser(),
-              new AvatarRequest(request.isSecure(), avatarSize)));
+          pullRequestAuthor
+              .getUser()
+              .setAvatarUrl(this.avatarService.getUrlForPerson(
+                  pullRequest.getAuthor().getUser(),
+                  new AvatarRequest(request.isSecure(), avatarSize)));
 
           for (RestPullRequestParticipant pullRequestParticipant : restPullRequest.getReviewers()) {
-            pullRequestParticipant.getUser().setAvatarUrl(this.avatarService.getUrlForPerson(
-                pullRequestParticipant.getUser(),
-                new AvatarRequest(request.isSecure(), avatarSize)));
+            pullRequestParticipant
+                .getUser()
+                .setAvatarUrl(this.avatarService.getUrlForPerson(
+                    pullRequestParticipant.getUser(),
+                    new AvatarRequest(request.isSecure(), avatarSize)));
           }
 
           filteredPullRequests.add(restPullRequest);
@@ -445,7 +457,8 @@ public class PullRequestLabels {
     final Label[] found = dao.find(project.getId(), repository.getId(), pullRequest.getId(), name);
 
     if (found.length > 0) {
-      return Response.ok(new PullRequestLabelsSaveResponse(found[0].getLabelId())).build();
+      return Response.ok(new PullRequestLabelsSaveResponse(found[0].getLabelId()))
+          .build();
     }
 
     int created = dao.create(project.getId(), repository.getId(), pullRequest.getId(), name, color);

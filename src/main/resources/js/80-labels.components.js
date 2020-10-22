@@ -17,9 +17,10 @@ var PullRequestFilter = function (react, filter) {
 
         return {
             state: filter.state.value || "OPEN",
-            is_reviewer: filter.reviewer_self.value,
             target_ref: filter.target_ref.value,
+            is_reviewer: filter.reviewer_self ? filter.reviewer_self.value : false,
             author: filter.author.value,
+            reviewer: filter.reviewer ? (filter.reviewer.value || null) : null,
             label: this._label,
         };
     }
