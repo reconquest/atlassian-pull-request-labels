@@ -10,6 +10,7 @@
 
 .rq-labels-side-panel {
     margin-bottom: 30px;
+    white-space: normal;
 }
 
 .rq-labels-side-panel .rq-labels-list {
